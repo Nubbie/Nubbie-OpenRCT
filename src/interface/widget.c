@@ -489,7 +489,7 @@ static void widget_text(rct_drawpixelinfo *dpi, rct_window *w, int widgetIndex)
 
 	if (widget_is_disabled(w, widgetIndex))
 		colour |= 0x40;
-	gfx_draw_string_left(dpi, widget->image, (void*)RCT2_ADDRESS_COMMON_FORMAT_ARGS, colour, l + 1, t);
+	gfx_draw_string_left_clipped(dpi, widget->image, (void*)RCT2_ADDRESS_COMMON_FORMAT_ARGS, colour, l + 1, t, r - l);
 }
 
 /**
@@ -1191,15 +1191,15 @@ static void widget_text_box_draw(rct_drawpixelinfo *dpi, rct_window *w, int widg
 
 	// Make a copy of the string for measuring the width.
 	char temp_string[512] = { 0 };
-	memcpy(temp_string, wrapped_string, min(string_length, gTextInputCursorPosition));
+	memcpy(temp_string, wrapped_string, min((size_t)string_length, gTextInput.selection_offset));
 	int cur_x = l + gfx_get_string_width(temp_string) + 3;
 
 	int width = 6;
-	if ((uint32)gTextInputCursorPosition < strlen(gTextBoxInput)){
+	if ((uint32)gTextInput.selection_offset < strlen(gTextBoxInput)){
 		// Make a new 1 character wide string for measuring the width
 		// of the character that the cursor is under.
 		temp_string[1] = '\0';
-		temp_string[0] = gTextBoxInput[gTextInputCursorPosition];
+		temp_string[0] = gTextBoxInput[gTextInput.selection_offset];
 		width = max(gfx_get_string_width(temp_string) - 2, 4);
 	}
 

@@ -27,7 +27,7 @@ STR_0025    :Boomstamattractie
 STR_0026    :Wildwaterbaan
 STR_0027    :Botsauto's
 STR_0028    :Schommelschip
-STR_0029    :Schommelschip dat over de kop gaat
+STR_0029    :Loopingschip
 STR_0030    :Eetkraam
 STR_0031    :Onbekende kraam (1D)
 STR_0032    :Drankkraam
@@ -2708,7 +2708,7 @@ STR_2703    :Elke 15 minuten
 STR_2704    :Elke 30 minuten
 STR_2705    :Elk uur
 STR_2706    :Nooit
-STR_2707    :Open nieuw scherm
+STR_2707    :Systeemdialoogvenster openen
 STR_2708    :{WINDOW_COLOUR_1}Weet je zeker dat je {STRINGID} wilt vervangen?
 STR_2709    :Vervangen
 STR_2710    :Kies een bestandsnaam.
@@ -2776,7 +2776,7 @@ STR_2771    :Lagere spelsnelheid
 STR_2772    :Hogere spelsnelheid
 STR_2773    :Venster
 STR_2774    :Volledig scherm
-STR_2775    :Volledig scherm (bureaublad)
+STR_2775    :Voll. sch. (randl. venster)
 STR_2776    :Taal:
 STR_2777    :{MOVE_X}{SMALLFONT}{STRING}
 STR_2778    :{RIGHTGUILLEMET}{MOVE_X}{SMALLFONT}{STRING}
@@ -4087,6 +4087,19 @@ STR_5785    :Kan de groep niet hernoemen...
 STR_5786    :Ongeldige groepsnaam
 STR_5787    :{COMMA32} spelers online
 STR_5788    :Standaard inspectie-interval:
+STR_5789    :Bliksemeffect uitschakelen
+STR_5790    :{SMALLFONT}{BLACK}Maakt geld vragen voor zowel het park als de attracties mogelijk,{NEWLINE}zoals in RCT1.
+STR_5791    :{SMALLFONT}{BLACK}Stelt het bouwjaar van alle attracties in op dit jaar{NEWLINE}en zet de betrouwbaarheid weer terug op 100%.
+STR_5792    :{SMALLFONT}{BLACK}Repareert alle defecte attracties.
+STR_5793    :{SMALLFONT}{BLACK}Wist de crashstatus van alle attracties,{NEWLINE}zodat de bezoekers ze niet als onveilig zien.
+STR_5794    :{SMALLFONT}{BLACK}In sommige scenario's kun je bepaalde bestaande attracties niet aanpassen.{NEWLINE}Deze cheat heft deze beperkingen op.
+STR_5795    :{SMALLFONT}{BLACK}Zorgt ervoor dat bezoekers in elke attractie gaan,{NEWLINE}zelfs als de intensiteit erg hoog is.
+STR_5796    :{SMALLFONT}{BLACK}Forceert het openen of sluiten van het park.
+STR_5797    :{SMALLFONT}{BLACK}Voorkomt dat het weer verandert.
+STR_5798    :{SMALLFONT}{BLACK}Staat bouwen in pauzemodus toe.
+STR_5799    :{SMALLFONT}{BLACK}Voorkomt dat de remmen van attracties kapot gaan, wat voor fatale botsingen kan zorgen.
+STR_5800    :{SMALLFONT}{BLACK}Voorkomt dat attracties kapot gaan.
+
 
 #############
 # Scenarios #
@@ -5601,9 +5614,9 @@ STR_DESC    :Groot schommelend piratenschip
 STR_CPTY    :16 passagiers
 # End of Swinging ship / Schommelschip
 
-# Swinging Inverter Ship / Schommelschip dat over de kop gaat
+# Swinging Inverter Ship / Loopingschip
 [SWSH2]
-STR_NAME    :Schommelschip dat over de kop gaat
+STR_NAME    :Loopingschip
 STR_DESC    :Schip dat is bevestigd aan een arm met een contragewicht, en 360 graden kan draaien.
 STR_CPTY    :12 passagiers
 
@@ -5612,7 +5625,7 @@ STR_CPTY    :12 passagiers
 STR_NAME    :Chinese jonk
 STR_DESC    :Chinese jonk die is bevestigd aan een arm met een contragewicht, en 360 graden kan draaien.
 STR_CPTY    :12 passagiers
-# End of Swinging Inverter Ship / Schommelschip dat over de kop gaat
+# End of Swinging Inverter Ship / Loopingschip
 
 # Spiral RC / Spiraalachtbaan
 [SPDRCR]
