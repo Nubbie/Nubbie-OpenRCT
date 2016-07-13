@@ -739,7 +739,7 @@ static void window_map_invalidate(rct_window *w)
 	}
 
 	// Disable all scenario editor related widgets
-	for (i = WIDX_MAP_SIZE_SPINNER; i <= WIDX_ROTATE_90; i++) {
+	for (i = WIDX_MAP_SIZE_SPINNER; i <= WIDX_MAP_GENERATOR; i++) {
 		w->widgets[i].type = WWT_EMPTY;
 	}
 
@@ -936,6 +936,7 @@ static void window_map_show_default_scenario_editor_buttons(rct_window *w) {
 	w->widgets[WIDX_MAP_SIZE_SPINNER].type = WWT_SPINNER;
 	w->widgets[WIDX_MAP_SIZE_SPINNER_UP].type = WWT_DROPDOWN_BUTTON;
 	w->widgets[WIDX_MAP_SIZE_SPINNER_DOWN].type = WWT_DROPDOWN_BUTTON;
+	w->widgets[WIDX_MAP_GENERATOR].type = WWT_DROPDOWN_BUTTON;
 	set_format_arg(2, uint16, gMapSize - 2);
 }
 
