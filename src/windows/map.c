@@ -936,7 +936,8 @@ static void window_map_show_default_scenario_editor_buttons(rct_window *w) {
 	w->widgets[WIDX_MAP_SIZE_SPINNER].type = WWT_SPINNER;
 	w->widgets[WIDX_MAP_SIZE_SPINNER_UP].type = WWT_DROPDOWN_BUTTON;
 	w->widgets[WIDX_MAP_SIZE_SPINNER_DOWN].type = WWT_DROPDOWN_BUTTON;
-	w->widgets[WIDX_MAP_GENERATOR].type = WWT_DROPDOWN_BUTTON;
+	if(!gCheatsSandboxMode) //Don't show the button if the sandbox cheat is enabled.
+		w->widgets[WIDX_MAP_GENERATOR].type = WWT_DROPDOWN_BUTTON;
 	set_format_arg(2, uint16, gMapSize - 2);
 }
 
