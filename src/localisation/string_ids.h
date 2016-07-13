@@ -2678,6 +2678,8 @@ enum {
 	STR_FILE_DIALOG_TITLE_SAVE_TRACK = 5895,
 	STR_TRACK_SAVE_FAILED = 5896,
 	
+	STR_MAP_GENERATOR_TIP = 5891,
+	
 	// Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
 	STR_COUNT = 32768
 };
