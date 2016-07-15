@@ -3330,6 +3330,7 @@ enum {
 	STR_TRACK_SAVE_FAILED = 5896,
 	
 	STR_WINDOW_LIMIT = 5897,
+	STR_TRACK_LOAD_FAILED_ERROR = 5898,
 
 	// Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
 	STR_COUNT = 32768
