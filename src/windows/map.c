@@ -314,6 +314,7 @@ static void window_map_mouseup(rct_window *w, int widgetIndex)
 		break;
 	case WIDX_BUILD_PARK_ENTRANCE:
 		window_invalidate(w);
+		cheats_reset();
 		if (tool_set(w, widgetIndex, 2))
 			break;
 
