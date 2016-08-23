@@ -218,7 +218,12 @@ const std::vector<NetworkAction> NetworkActions::Actions =
         {
             -3
         }
-    },
+    }, {
+		STR_ACTION_UNSTABLE_CHEAT, "PERMISSION_UNSTABLE_CHEATS",
+	{
+			GAME_COMMAND_UNSTABLE_CHEAT
+		}
+	},
 };
 
 #endif
