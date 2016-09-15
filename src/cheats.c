@@ -409,6 +409,7 @@ void game_command_cheat(int* eax, int* ebx, int* ecx, int* edx, int* esi, int* e
 			case CHEAT_GENERATEGUESTS: cheat_generate_guests(*edx); break;
 			case CHEAT_REMOVEALLGUESTS: cheat_remove_all_guests(); break;
 			case CHEAT_EXPLODEGUESTS: cheat_explode_guests(); break;
+			case CHEAT_VOMITGUESTS: cheat_vomit_guests(); break;
 			case CHEAT_GIVEALLGUESTS: cheat_give_all_guests(*edx); break;
 			case CHEAT_SETGRASSLENGTH: cheat_set_grass_length(*edx); break;
 			case CHEAT_WATERPLANTS: cheat_water_plants(); break;
