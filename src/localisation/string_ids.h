@@ -3570,6 +3570,8 @@ enum {
 	STR_MULTIPLAYER_PLAYER_COUNT_PLURAL = 5917,
 	STR_SERVER_MAX_PLAYERS_VALUE = 5918,
 	STR_COMMA16 = 5919,
+	STR_CHEAT_VOMIT = 5920,
+	STR_CHEAT_VOMIT_TIP = 5921,
 
 	// Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
 	STR_COUNT = 32768
