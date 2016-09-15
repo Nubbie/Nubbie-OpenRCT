@@ -358,6 +358,18 @@ static void cheat_explode_guests()
 	}
 }
 
+static void cheat_vomit_guests()
+{
+	int sprite_index;
+	rct_peep *peep;
+
+	FOR_ALL_GUESTS(sprite_index, peep) {
+		if (scenario_rand_max(6) == 0) {
+			peep->peep_flags |= PEEP_ACTION_THROW_UP;
+		}
+	}
+}
+
 static void cheat_set_staff_speed(uint8 value)
 {
 	uint16 spriteIndex;
