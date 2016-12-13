@@ -402,6 +402,7 @@ install(FILES ${DOC_FILES} DESTINATION share/doc/${PROJECT})
 
 install(FILES resources/logo/icon_x16.png DESTINATION share/icons/hicolor/16x16/apps RENAME openrct2.png)
 install(FILES resources/logo/icon_x32.png DESTINATION share/icons/hicolor/32x32/apps RENAME openrct2.png)
+install(FILES resources/logo/icon_x40.png DESTINATION share/icons/hicolor/40x40/apps RENAME openrct2.png)
 install(FILES resources/logo/icon_x64.png DESTINATION share/icons/hicolor/64x64/apps RENAME openrct2.png)
 install(FILES resources/logo/icon_x128.png DESTINATION share/icons/hicolor/128x128/apps RENAME openrct2.png)
 install(FILES resources/logo/icon_x256.png DESTINATION share/icons/hicolor/256x256/apps RENAME openrct2.png)
