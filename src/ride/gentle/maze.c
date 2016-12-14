@@ -62,7 +62,7 @@ static void maze_paint_setup(uint8 rideIndex, uint8 trackSequence, uint8 directi
 
 	paint_util_set_segment_support_height(SEGMENTS_ALL & ~SEGMENT_C4, 0xFFFF, 0);
 
-	int base_image_id;
+	int base_image_id = 0;
 	switch (get_ride(rideIndex)->track_colour_supports[0]) {
 		case 0: base_image_id = SPR_MAZE_BASE_BRICK; break;
 		case 1: base_image_id = SPR_MAZE_BASE_HEDGE; break;
@@ -163,7 +163,7 @@ static void maze_paint_setup(uint8 rideIndex, uint8 trackSequence, uint8 directi
 
 	if (maze_entry & (1 << 9 | 1 << 10 | 1 << 12))
 		sub_98197C(base_image_id + SPR_MAZE_OFFSET_COLUMN_BOTTOM_LEFT, 30, 14, 1, 2, 9, height, 30, 15, height + 2, rotation);
-	
+
 
 	if (maze_entry & (1 << 2 | 1 << 6 | 1 << 10 | 1 << 14)) {
 		sub_98197C(base_image_id + SPR_MAZE_OFFSET_COLUMN_CENTER, 14, 14, 2, 2, 8, height, 15, 15, height + 2, rotation);

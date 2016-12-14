@@ -1301,7 +1301,7 @@ static void window_editor_object_selection_paint(rct_window *w, rct_drawpixelinf
 
 		set_format_arg(0, uint16, numSelected);
 		set_format_arg(2, uint16, totalSelectable);
-		gfx_draw_string_left(dpi, STR_OBJECT_SELECTION_SELECTION_SIZE, gCommonFormatArgs, 0, x, y);
+		gfx_draw_string_left(dpi, STR_OBJECT_SELECTION_SELECTION_SIZE, gCommonFormatArgs, COLOUR_BLACK, x, y);
 	}
 
 	// Draw sort button text
@@ -1343,7 +1343,7 @@ static void window_editor_object_selection_paint(rct_window *w, rct_drawpixelinf
 	width = w->width - w->widgets[WIDX_LIST].right - 6;
 	set_format_arg(0, rct_string_id, STR_STRING);
 	set_format_arg(2, const char *, listItem->repositoryItem->Name);
-	gfx_draw_string_centred_clipped(dpi, STR_WINDOW_COLOUR_2_STRINGID, gCommonFormatArgs, 0, x, y, width);
+	gfx_draw_string_centred_clipped(dpi, STR_WINDOW_COLOUR_2_STRINGID, gCommonFormatArgs, COLOUR_BLACK, x, y, width);
 
 	// Draw description of object
 	const char *description = object_get_description(_loadedObject);
@@ -1355,9 +1355,9 @@ static void window_editor_object_selection_paint(rct_window *w, rct_drawpixelinf
 		y += 15;
 		int width = w->x + w->width - x - 4;
 		if (type == OBJECT_TYPE_SCENARIO_TEXT) {
-			gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, width, STR_OBJECT_SELECTION_DESCRIPTION_SCENARIO_TEXT, 0);
+			gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, width, STR_OBJECT_SELECTION_DESCRIPTION_SCENARIO_TEXT, COLOUR_BLACK);
 		} else {
-			gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y + 5, width, STR_WINDOW_COLOUR_2_STRINGID, 0);
+			gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y + 5, width, STR_WINDOW_COLOUR_2_STRINGID, COLOUR_BLACK);
 		}
 	}
 
@@ -1369,13 +1369,13 @@ static void window_editor_object_selection_paint(rct_window *w, rct_drawpixelinf
 	case 2: stringId = STR_OBJECT_FILTER_TT; break;
 	default: stringId = STR_OBJECT_FILTER_CUSTOM; break;
 	}
-	gfx_draw_string_right(dpi, stringId, NULL, 2, w->x + w->width - 5, w->y + w->height - 3 - 12 - 14);
+	gfx_draw_string_right(dpi, stringId, NULL, COLOUR_WHITE, w->x + w->width - 5, w->y + w->height - 3 - 12 - 14);
 
 	//
 	if (w->selected_tab == WINDOW_OBJECT_SELECTION_PAGE_RIDE_VEHICLES_ATTRACTIONS) {
 		y = w->y + w->height - 3 - 12 - 14 - 14;
 		stringId = get_ride_type_string_id(listItem->repositoryItem);
-		gfx_draw_string_right(dpi, stringId, NULL, 2, w->x + w->width - 5, y);
+		gfx_draw_string_right(dpi, stringId, NULL, COLOUR_WHITE, w->x + w->width - 5, y);
 		y -= 11;
 	}
 
@@ -1386,7 +1386,7 @@ static void window_editor_object_selection_paint(rct_window *w, rct_drawpixelinf
 	const char *path = path_get_filename(listItem->repositoryItem->Path);
 	set_format_arg(0, rct_string_id, STR_STRING);
 	set_format_arg(2, const char *, path);
-	gfx_draw_string_right(dpi, STR_WINDOW_COLOUR_2_STRINGID, gCommonFormatArgs, 0, w->x + w->width - 5, w->y + w->height - 3 - 12);
+	gfx_draw_string_right(dpi, STR_WINDOW_COLOUR_2_STRINGID, gCommonFormatArgs, COLOUR_BLACK, w->x + w->width - 5, w->y + w->height - 3 - 12);
 }
 
 /**
@@ -1399,9 +1399,8 @@ static void window_editor_object_selection_scrollpaint(rct_window *w, rct_drawpi
 
 	bool ridePage = (w->selected_tab == WINDOW_OBJECT_SELECTION_PAGE_RIDE_VEHICLES_ATTRACTIONS);
 
-	colour = ColourMapA[w->colours[1]].mid_light;
-	colour = (colour << 24) | (colour << 16) | (colour << 8) | colour;
-	gfx_clear(dpi, colour);
+	uint8 paletteIndex = ColourMapA[w->colours[1]].mid_light;
+	gfx_clear(dpi, paletteIndex);
 
 	y = 0;
 	for (i = 0; i < _numListItems; i++) {
@@ -1410,22 +1409,22 @@ static void window_editor_object_selection_scrollpaint(rct_window *w, rct_drawpi
 		if (y + 12 >= dpi->y && y <= dpi->y + dpi->height) {
 			// Draw checkbox
 			if (!(gScreenFlags & SCREEN_FLAGS_TRACK_MANAGER) && !(*listItem->flags & 0x20))
-				gfx_fill_rect_inset(dpi, 2, y, 11, y + 10, w->colours[1], 0xE0);
+				gfx_fill_rect_inset(dpi, 2, y, 11, y + 10, w->colours[1], INSET_RECT_F_E0);
 
 			// Highlight background
-			colour = 142;
+			colour = COLOUR_BRIGHT_GREEN | COLOUR_FLAG_TRANSLUCENT;
 			if (listItem->entry == w->object_entry && !(*listItem->flags & OBJECT_SELECTION_FLAG_6)) {
-				gfx_fill_rect(dpi, 0, y, w->width, y + 11, 0x2000031);
-				colour = 14;
+				gfx_filter_rect(dpi, 0, y, w->width, y + 11, PALETTE_DARKEN_1);
+				colour = COLOUR_BRIGHT_GREEN;
 			}
 
 			// Draw checkmark
 			if (!(gScreenFlags & SCREEN_FLAGS_TRACK_MANAGER) && (*listItem->flags & OBJECT_SELECTION_FLAG_SELECTED)) {
 				x = 2;
-				gCurrentFontSpriteBase = colour == 14 ? -2 : -1;
-				colour2 = w->colours[1] & 0x7F;
+				gCurrentFontSpriteBase = colour == COLOUR_BRIGHT_GREEN ? FONT_SPRITE_BASE_MEDIUM_EXTRA_DARK : FONT_SPRITE_BASE_MEDIUM_DARK;
+				colour2 = NOT_TRANSLUCENT(w->colours[1]);
 				if (*listItem->flags & (OBJECT_SELECTION_FLAG_IN_USE | OBJECT_SELECTION_FLAG_ALWAYS_REQUIRED))
-					colour2 |= 0x40;
+					colour2 |= COLOUR_FLAG_INSET;
 
 				gfx_draw_string(dpi, (char*)CheckBoxMarkString, colour2, x, y);
 			}
@@ -1436,23 +1435,23 @@ static void window_editor_object_selection_scrollpaint(rct_window *w, rct_drawpi
 			char *buffer = utf8_write_codepoint(bufferWithColour, colour);
 			if (*listItem->flags & OBJECT_SELECTION_FLAG_6) {
 				colour = w->colours[1] & 0x7F;
-				gCurrentFontSpriteBase = -1;
+				gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM_DARK;
 			}
 			else {
-				colour = 0;
+				colour = COLOUR_BLACK;
 				gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
 			}
 
 			if (ridePage) {
 				// Draw ride type
 				rct_string_id rideTypeStringId = get_ride_type_string_id(listItem->repositoryItem);
-				strcpy(buffer, language_get_string(rideTypeStringId));
+				safe_strcpy(buffer, language_get_string(rideTypeStringId), 256 - (buffer - bufferWithColour));
 				gfx_draw_string(dpi, bufferWithColour, colour, x, y);
 				x = w->widgets[WIDX_LIST_SORT_RIDE].left - w->widgets[WIDX_LIST].left;
 			}
 
 			// Draw text
-			strcpy(buffer, listItem->repositoryItem->Name);
+			safe_strcpy(buffer, listItem->repositoryItem->Name, 256 - (buffer - bufferWithColour));
 			if (gScreenFlags & SCREEN_FLAGS_TRACK_MANAGER) {
 				while (*buffer != 0 && *buffer != 9)
 					buffer++;
@@ -1474,6 +1473,7 @@ static void window_editor_object_set_page(rct_window *w, int page)
 	w->selected_list_item = -1;
 	w->object_entry = (rct_object_entry *)-1;
 	w->scrolls[0].v_top = 0;
+	w->frame_no = 0;
 
 	if (page == WINDOW_OBJECT_SELECTION_PAGE_RIDE_VEHICLES_ATTRACTIONS) {
 		_listSortType = RIDE_SORT_TYPE;
@@ -1629,7 +1629,7 @@ static int window_editor_object_selection_select_object(uint8 bh, int flags, con
 
 		if (bh != 0 && !(flags & (1 << 1))) {
 			char objectName[64];
-			object_create_identifier_name(objectName, &item->ObjectEntry);
+			object_create_identifier_name(objectName, 64, &item->ObjectEntry);
 			set_format_arg(0, const char *, objectName);
 			set_object_selection_error(bh, STR_OBJECT_SELECTION_ERR_SHOULD_SELECT_X_FIRST);
 			return 0;

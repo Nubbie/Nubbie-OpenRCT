@@ -23,6 +23,7 @@
 #include "../core/Path.hpp"
 #include "../core/String.hpp"
 #include "../core/Util.hpp"
+#include "../ScenarioSources.h"
 #include "../object/ObjectManager.h"
 #include "S4Importer.h"
 #include "Tables.h"
@@ -156,6 +157,7 @@ public:
         ImportSavedView();
 
         game_convert_strings_to_utf8();
+        map_count_remaining_land_rights();
     }
 
 private:
@@ -296,7 +298,7 @@ private:
         size_t maxTiles = 128 * 128;
         size_t tileIndex = 0;
         rct_map_element * mapElement = _s4.map_elements;
-    
+
         while (tileIndex < maxTiles)
         {
             switch (map_element_get_type(mapElement)) {
@@ -606,7 +608,7 @@ private:
         dst->operation_option = src->operation_option;
         dst->num_circuits = 1;
         dst->min_max_cars_per_train = (rideEntry->min_cars_in_train << 4) | rideEntry->max_cars_in_train;
-    
+
         // RCT1 used 5mph / 8 km/h for every lift hill
         dst->lift_hill_speed = 5;
 
@@ -1071,7 +1073,7 @@ private:
         {
             gCheatsUnlockAllPrices = true;
         }
-        // RCT2 uses two flags for no money (for cheat detection). RCT1 used only one. 
+        // RCT2 uses two flags for no money (for cheat detection). RCT1 used only one.
         // Copy its value to make no money scenarios such as Arid Heights work properly.
         if (_s4.park_flags & RCT1_PARK_FLAGS_NO_MONEY)
         {

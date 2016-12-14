@@ -15,11 +15,12 @@
 #pragma endregion
 
 #include "../input.h"
-#include "../localisation/localisation.h"
-#include "../sprites.h"
 #include "../interface/themes.h"
 #include "../interface/widget.h"
 #include "../interface/window.h"
+#include "../localisation/localisation.h"
+#include "../rct2.h"
+#include "../sprites.h"
 #include "../world/map.h"
 #include "../world/scenery.h"
 
@@ -239,7 +240,7 @@ static void window_clear_scenery_paint(rct_window *w, rct_drawpixelinfo *dpi)
 	x = w->x + (window_clear_scenery_widgets[WIDX_PREVIEW].left + window_clear_scenery_widgets[WIDX_PREVIEW].right) / 2;
 	y = w->y + (window_clear_scenery_widgets[WIDX_PREVIEW].top + window_clear_scenery_widgets[WIDX_PREVIEW].bottom) / 2;
 	if (gLandToolSize > 7) {
-		gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, 0, &gLandToolSize);
+		gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, COLOUR_BLACK, &gLandToolSize);
 	}
 
 	// Draw cost amount
@@ -248,7 +249,7 @@ static void window_clear_scenery_paint(rct_window *w, rct_drawpixelinfo *dpi)
 	if (gClearSceneryCost != MONEY32_UNDEFINED &&
 		gClearSceneryCost != 0
 	) {
-		gfx_draw_string_centred(dpi, STR_COST_AMOUNT, x, y, 0, &gClearSceneryCost);
+		gfx_draw_string_centred(dpi, STR_COST_AMOUNT, x, y, COLOUR_BLACK, &gClearSceneryCost);
 	}
 }
 

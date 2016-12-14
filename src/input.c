@@ -17,11 +17,11 @@
 #include <SDL_keycode.h>
 #include "audio/audio.h"
 #include "config.h"
-#include "cursors.h"
 #include "game.h"
 #include "input.h"
 #include "interface/chat.h"
 #include "interface/console.h"
+#include "interface/Cursors.h"
 #include "interface/keyboard_shortcut.h"
 #include "interface/viewport.h"
 #include "interface/widget.h"
@@ -37,6 +37,7 @@
 #include "world/sprite.h"
 #include "world/scenery.h"
 #include "openrct2.h"
+#include "rct2.h"
 
 typedef struct rct_mouse_data {
 	uint32 x;
@@ -73,7 +74,6 @@ widget_ref gTooltipWidget;
 sint32 gTooltipCursorX;
 sint32 gTooltipCursorY;
 
-uint8 gCurrentCursor;
 uint8 gCurrentToolId;
 widget_ref gCurrentToolWidget;
 
@@ -104,7 +104,7 @@ static void input_window_resize_end();
 static void input_viewport_drag_begin(rct_window *w, int x, int y);
 static void input_viewport_drag_continue();
 static void input_viewport_drag_end();
-static void input_scroll_begin();
+static void input_scroll_begin(rct_window *w, int widgetIndex, int x, int y);
 static void input_scroll_continue(rct_window *w, int widgetIndex, int state, int x, int y);
 static void input_scroll_end();
 static void input_scroll_part_update_hthumb(rct_window *w, int widgetIndex, int x, int scroll_id);
@@ -239,7 +239,7 @@ static void input_scroll_drag_continue(int x, int y, rct_window* w)
 
 	int fixedCursorPositionX = (int) ceilf(gInputDragLastX * gConfigGeneral.window_scale);
 	int fixedCursorPositionY = (int) ceilf(gInputDragLastY * gConfigGeneral.window_scale);
-	
+
 	platform_set_cursor_position(fixedCursorPositionX, fixedCursorPositionY);
 }
 
@@ -1432,7 +1432,7 @@ void title_handle_keyboard_input()
 
 		// Reserve backtick for console
 		if (key == SDL_SCANCODE_GRAVE) {
-			if (gConfigGeneral.debugging_tools || gConsoleOpen) {
+			if ((gConfigGeneral.debugging_tools && !platform_is_input_active()) || gConsoleOpen) {
 				window_cancel_textbox();
 				console_toggle();
 			}
@@ -1503,7 +1503,7 @@ void game_handle_keyboard_input()
 
 		// Reserve backtick for console
 		if (key == SDL_SCANCODE_GRAVE) {
-			if (gConfigGeneral.debugging_tools || gConsoleOpen) {
+			if ((gConfigGeneral.debugging_tools && !platform_is_input_active()) || gConsoleOpen) {
 				window_cancel_textbox();
 				console_toggle();
 			}
@@ -1560,10 +1560,7 @@ void sub_6ED990(uint8 cursor_id)
 	if (gInputState == INPUT_STATE_RESIZING) {
 		cursor_id = CURSOR_DIAGONAL_ARROWS;
 	}
-	if (cursor_id != gCurrentCursor) {
-		gCurrentCursor = cursor_id;
-		platform_set_cursor(cursor_id);
-	}
+	cursors_setcurrentcursor(cursor_id);
 }
 
 
@@ -1667,13 +1664,6 @@ void game_handle_key_scroll()
 	scrollY = 0;
 
 	for (int shortcutId = SHORTCUT_SCROLL_MAP_UP; shortcutId <= SHORTCUT_SCROLL_MAP_RIGHT; shortcutId++) {
-		const int SHIFT = 0x100;
-		const int CTRL = 0x200;
-		const int ALT = 0x400;
-#ifdef __MACOSX__
-		const int CMD = 0x800;
-#endif
-
 		uint16 shortcutKey = gShortcutKeys[shortcutId];
 		uint8 scancode = shortcutKey & 0xFF;
 

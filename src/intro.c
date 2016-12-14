@@ -18,8 +18,7 @@
 #include "audio/mixer.h"
 #include "drawing/drawing.h"
 #include "intro.h"
-#include "localisation/localisation.h"
-#include "platform/platform.h"
+#include "rct2.h"
 #include "sprites.h"
 
 #define BACKROUND_COLOUR_DARK		10
@@ -155,6 +154,7 @@ void intro_update()
 		gIntroState = INTRO_STATE_NONE;
 		load_palette();
 		gfx_invalidate_screen();
+		audio_start_title_music();
 		break;
 	}
 }
@@ -162,7 +162,7 @@ void intro_update()
 void intro_draw(rct_drawpixelinfo *dpi)
 {
 	int screenWidth = gScreenWidth;
-	
+
 	switch (gIntroState) {
 	case INTRO_STATE_DISCLAIMER_1:
 	case INTRO_STATE_DISCLAIMER_2:

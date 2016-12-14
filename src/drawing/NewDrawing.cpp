@@ -26,6 +26,7 @@ extern "C"
     #include "../interface/screenshot.h"
     #include "../localisation/string_ids.h"
     #include "../platform/platform.h"
+    #include "../rct2.h"
 }
 
 static sint32           _drawingEngineType  = DRAWING_ENGINE_SOFTWARE;
@@ -192,12 +193,12 @@ extern "C"
     {
     }
 
-    void gfx_clear(rct_drawpixelinfo * dpi, uint32 colour)
+    void gfx_clear(rct_drawpixelinfo * dpi, uint8 paletteIndex)
     {
         if (_drawingEngine != nullptr)
         {
             IDrawingContext * dc = _drawingEngine->GetDrawingContext(dpi);
-            dc->Clear(colour);
+            dc->Clear(paletteIndex);
         }
     }
 
@@ -207,6 +208,15 @@ extern "C"
         {
             IDrawingContext * dc = _drawingEngine->GetDrawingContext(dpi);
             dc->FillRect(colour, left, top, right, bottom);
+        }
+    }
+
+    void gfx_filter_rect(rct_drawpixelinfo * dpi, int left, int top, int right, int bottom, FILTER_PALETTE_ID palette)
+    {
+        if (_drawingEngine != nullptr)
+        {
+            IDrawingContext * dc = _drawingEngine->GetDrawingContext(dpi);
+            dc->FilterRect(palette, left, top, right, bottom);
         }
     }
 

@@ -27,6 +27,7 @@
 #include "../management/research.h"
 #include "../peep/peep.h"
 #include "../peep/staff.h"
+#include "../rct2.h"
 #include "../ride/ride.h"
 #include "../ride/ride_data.h"
 #include "../scenario.h"
@@ -147,7 +148,7 @@ void park_init()
 	award_reset();
 
 	gS6Info.name[0] = '\0';
-	format_string(gS6Info.details, STR_NO_DETAILS_YET, NULL);
+	format_string(gS6Info.details, 256, STR_NO_DETAILS_YET, NULL);
 }
 
 /**
@@ -915,7 +916,7 @@ void game_command_set_park_name(int *eax, int *ebx, int *ecx, int *edx, int *esi
 		return;
 	}
 
-	format_string(oldName, gParkName, &gParkNameArgs);
+	format_string(oldName, 128, gParkName, &gParkNameArgs);
 	if (strcmp(oldName, newName) == 0) {
 		*ebx = 0;
 		return;
@@ -1114,14 +1115,23 @@ int map_buy_land_rights(int x0, int y0, int x1, int y1, int setting, int flags)
 */
 void game_command_buy_land_rights(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp)
 {
+	int flags = *ebx & 0xFFFF;
+
 	*ebx = map_buy_land_rights(
 		(*eax & 0xFFFF),
 		(*ecx & 0xFFFF),
 		(*edi & 0xFFFF),
 		(*ebp & 0xFFFF),
 		(*edx & 0xFF00) >> 8,
-		*ebx & 0xFFFF
+		flags
 	);
+
+	// Too expensive to always call in map_buy_land_rights.
+	// It's already counted when the park is loaded, after
+	// that it should only be called for user actions.
+	if (flags & GAME_COMMAND_FLAG_APPLY) {
+		map_count_remaining_land_rights();
+	}
 }
 
 

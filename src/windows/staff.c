@@ -433,6 +433,25 @@ void window_staff_set_page(rct_window* w, int page)
 	if (listen && w->viewport) w->viewport->flags |= VIEWPORT_FLAG_SOUND_ON;
 }
 
+void game_command_callback_pickup_staff(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp)
+{
+	switch(ecx){
+	case 0:{
+		int peepnum = eax;
+		rct_window* w = window_find_by_number(WC_PEEP, peepnum);
+		if (w) {
+			tool_set(w, WIDX_PICKUP, 7);
+		}
+		}break;
+	case 2:
+		if (ebx == 0) {
+			tool_cancel();
+			gPickupPeepImage = UINT32_MAX;
+		}
+		break;
+	}
+}
+
 /**
  *
  *  rct2: 0x006BDF55
@@ -454,19 +473,15 @@ void window_staff_overview_mouseup(rct_window *w, int widgetIndex)
 		window_scroll_to_viewport(w);
 		break;
 	case WIDX_PICKUP:
-		if (tool_set(w, widgetIndex, 7)) {
-			return;
-		}
-
+		{
+		// this is called in callback when hiring staff, setting nestlevel to 0 so that command is sent separately
+		int oldNestLevel = gGameCommandNestLevel;
+		gGameCommandNestLevel = 0;
+		game_command_callback = game_command_callback_pickup_staff;
 		w->picked_peep_old_x = peep->x;
-
-		remove_peep_from_ride(peep);
-		invalidate_sprite_2((rct_sprite*)peep);
-
-		sprite_move( 0x8000, peep->y, peep->z, (rct_sprite*)peep);
-		peep_decrement_num_riders(peep);
-		peep->state = PEEP_STATE_PICKED;
-		peep_window_state_update(peep);
+		game_do_command(w->number, GAME_COMMAND_FLAG_APPLY, 0, 0, GAME_COMMAND_PICKUP_STAFF, 0, 0);
+		gGameCommandNestLevel = oldNestLevel;
+		}
 		break;
 	case WIDX_FIRE:
 		window_staff_fire_prompt_open(peep);
@@ -922,7 +937,7 @@ void window_staff_overview_paint(rct_window *w, rct_drawpixelinfo *dpi)
 	int x = (widget->left + widget->right) / 2 + w->x;
 	int y = w->y + widget->top;
 	int width = widget->right - widget->left;
-	gfx_draw_string_centred_clipped(dpi, STR_BLACK_STRING, gCommonFormatArgs, 0, x, y, width);
+	gfx_draw_string_centred_clipped(dpi, STR_BLACK_STRING, gCommonFormatArgs, COLOUR_BLACK, x, y, width);
 }
 
 /**
@@ -1060,27 +1075,27 @@ void window_staff_stats_paint(rct_window *w, rct_drawpixelinfo *dpi)
 
 	if (!(gParkFlags & PARK_FLAGS_NO_MONEY)) {
 		set_format_arg(0, money32, wage_table[peep->staff_type]);
-		gfx_draw_string_left(dpi, STR_STAFF_STAT_WAGES, gCommonFormatArgs, 0, x, y);
+		gfx_draw_string_left(dpi, STR_STAFF_STAT_WAGES, gCommonFormatArgs, COLOUR_BLACK, x, y);
 		y += 10;
 	}
 
-	gfx_draw_string_left(dpi, STR_STAFF_STAT_EMPLOYED_FOR, (void*)&peep->time_in_park, 0, x, y);
+	gfx_draw_string_left(dpi, STR_STAFF_STAT_EMPLOYED_FOR, (void*)&peep->time_in_park, COLOUR_BLACK, x, y);
 	y += 10;
 
 	switch (peep->staff_type){
 	case STAFF_TYPE_HANDYMAN:
-		gfx_draw_string_left(dpi, STR_STAFF_STAT_LAWNS_MOWN, (void*)&peep->staff_lawns_mown, 0, x, y);
+		gfx_draw_string_left(dpi, STR_STAFF_STAT_LAWNS_MOWN, (void*)&peep->staff_lawns_mown, COLOUR_BLACK, x, y);
 		y += 10;
-		gfx_draw_string_left(dpi, STR_STAFF_STAT_GARDENS_WATERED, (void*)&peep->staff_gardens_watered, 0, x, y);
+		gfx_draw_string_left(dpi, STR_STAFF_STAT_GARDENS_WATERED, (void*)&peep->staff_gardens_watered, COLOUR_BLACK, x, y);
 		y += 10;
-		gfx_draw_string_left(dpi, STR_STAFF_STAT_LITTER_SWEPT, (void*)&peep->staff_litter_swept, 0, x, y);
+		gfx_draw_string_left(dpi, STR_STAFF_STAT_LITTER_SWEPT, (void*)&peep->staff_litter_swept, COLOUR_BLACK, x, y);
 		y += 10;
-		gfx_draw_string_left(dpi, STR_STAFF_STAT_BINS_EMPTIED, (void*)&peep->staff_bins_emptied, 0, x, y);
+		gfx_draw_string_left(dpi, STR_STAFF_STAT_BINS_EMPTIED, (void*)&peep->staff_bins_emptied, COLOUR_BLACK, x, y);
 		break;
 	case STAFF_TYPE_MECHANIC:
-		gfx_draw_string_left(dpi, STR_STAFF_STAT_RIDES_INSPECTED, (void*)&peep->staff_rides_inspected, 0, x, y);
+		gfx_draw_string_left(dpi, STR_STAFF_STAT_RIDES_INSPECTED, (void*)&peep->staff_rides_inspected, COLOUR_BLACK, x, y);
 		y += 10;
-		gfx_draw_string_left(dpi, STR_STAFF_STAT_RIDES_FIXED, (void*)&peep->staff_rides_fixed, 0, x, y);
+		gfx_draw_string_left(dpi, STR_STAFF_STAT_RIDES_FIXED, (void*)&peep->staff_rides_fixed, COLOUR_BLACK, x, y);
 		break;
 	}
 }
@@ -1144,49 +1159,14 @@ void window_staff_overview_tool_down(rct_window* w, int widgetIndex, int x, int 
 {
 	if (widgetIndex == WIDX_PICKUP) {
 		int dest_x, dest_y;
-		rct_map_element *mapElement;
+		rct_map_element* mapElement;
 		footpath_get_coordinates_from_pos(x, y + 16, &dest_x, &dest_y, NULL, &mapElement);
 
-		if (dest_x == (sint16)0x8000)return;
-
-		// Set the coordinate of destination to be exactly
-		// in the middle of a tile.
-		dest_x += 16;
-		dest_y += 16;
-		// Set the tile coordinate to top left of tile
-		int tile_y = dest_y & 0xFFE0;
-		int tile_x = dest_x & 0xFFE0;
-
-		int dest_z = mapElement->base_height * 8 + 16;
-
-		if (!map_is_location_owned(tile_x, tile_y, dest_z)){
-			window_error_open(STR_ERR_CANT_PLACE_PERSON_HERE, STR_NONE);
+		if (dest_x == (sint16)0x8000)
 			return;
-		}
 
-		if (!map_can_construct_at(tile_x, tile_y, dest_z / 8, (dest_z / 8) + 1, 15)){
-			if (gGameCommandErrorText != STR_RAISE_OR_LOWER_LAND_FIRST){
-				if (gGameCommandErrorText != STR_FOOTPATH_IN_THE_WAY){
-					window_error_open(STR_ERR_CANT_PLACE_PERSON_HERE, STR_NONE);
-					return;
-				}
-			}
-		}
-
-		rct_peep* peep = GET_PEEP(w->number);
-		sprite_move(dest_x, dest_y, dest_z, (rct_sprite*)peep);
-		invalidate_sprite_2((rct_sprite*)peep);
-		peep_decrement_num_riders(peep);
-		peep->state = PEEP_STATE_FALLING;
-		peep_window_state_update(peep);
-		peep->action = 0xFF;
-		peep->special_sprite = 0;
-		peep->action_sprite_image_offset = 0;
-		peep->action_sprite_type = 0;
-		peep->var_C4 = 0;
-
-		tool_cancel();
-		gPickupPeepImage = UINT32_MAX;
+		game_command_callback = game_command_callback_pickup_staff;
+		game_do_command(w->number, GAME_COMMAND_FLAG_APPLY, 2, mapElement->base_height, GAME_COMMAND_PICKUP_STAFF, dest_x, dest_y);
 	}
 	else if (widgetIndex == WIDX_PATROL){
 		int dest_x, dest_y;
@@ -1205,24 +1185,7 @@ void window_staff_overview_tool_down(rct_window* w, int widgetIndex, int x, int 
 void window_staff_overview_tool_abort(rct_window *w, int widgetIndex)
 {
 	if (widgetIndex == WIDX_PICKUP) {
-		rct_peep* peep = GET_PEEP(w->number);
-		if (peep->state != PEEP_STATE_PICKED) return;
-
-		sprite_move(w->picked_peep_old_x, peep->y, peep->z + 8, (rct_sprite*)peep);
-		invalidate_sprite_2((rct_sprite*)peep);
-
-		if (peep->x != (sint16)0x8000){
-			peep_decrement_num_riders(peep);
-			peep->state = PEEP_STATE_FALLING;
-			peep_window_state_update(peep);
-			peep->action = 0xFF;
-			peep->special_sprite = 0;
-			peep->action_sprite_image_offset = 0;
-			peep->action_sprite_type = 0;
-			peep->var_C4 = 0;
-		}
-
-		gPickupPeepImage = UINT32_MAX;
+		game_do_command(w->number, GAME_COMMAND_FLAG_APPLY, 1, 0, GAME_COMMAND_PICKUP_STAFF, w->picked_peep_old_x, 0);
 	}
 	else if (widgetIndex == WIDX_PATROL){
 		hide_gridlines();

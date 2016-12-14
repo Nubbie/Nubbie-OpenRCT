@@ -21,7 +21,7 @@
 
 #include "../common.h"
 #include "../core/Console.hpp"
-#include "../core/FileEnumerator.h"
+#include "../core/FileScanner.h"
 #include "../core/FileStream.hpp"
 #include "../core/Guard.hpp"
 #include "../core/IStream.hpp"
@@ -30,6 +30,7 @@
 #include "../core/Path.hpp"
 #include "../core/Stopwatch.hpp"
 #include "../core/String.hpp"
+#include "../ScenarioRepository.h"
 #include "Object.h"
 #include "ObjectFactory.h"
 #include "ObjectManager.h"
@@ -44,8 +45,9 @@ extern "C"
     #include "../object.h"
     #include "../object_list.h"
     #include "../platform/platform.h"
-    #include "../scenario.h"
+    #include "../rct2.h"
     #include "../util/sawyercoding.h"
+    #include "../util/util.h"
 }
 
 constexpr uint16 OBJECT_REPOSITORY_VERSION = 10;
@@ -64,14 +66,6 @@ struct ObjectRepositoryHeader
 assert_struct_size(ObjectRepositoryHeader, 28);
 #pragma pack(pop)
 
-struct QueryDirectoryResult
-{
-    uint32  TotalFiles;
-    uint64  TotalFileSize;
-    uint32  FileDateModifiedChecksum;
-    uint32  PathChecksum;
-};
-
 struct ObjectEntryHash
 {
     size_t operator()(const rct_object_entry &entry) const
@@ -84,7 +78,7 @@ struct ObjectEntryHash
         return hash;
     }
 };
- 
+
 struct ObjectEntryEqual
 {
     bool operator()(const rct_object_entry &lhs, const rct_object_entry &rhs) const
@@ -121,7 +115,7 @@ public:
         QueryDirectory(&_queryDirectoryResult, path);
         GetUserObjectPath(path, sizeof(path));
         QueryDirectory(&_queryDirectoryResult, path);
-        
+
         if (!Load())
         {
             _languageId = gCurrentLanguage;
@@ -133,7 +127,7 @@ public:
         // SortItems();
     }
 
-    const size_t GetNumObjects() const override
+    size_t GetNumObjects() const override
     {
         return _items.size();
     }
@@ -238,21 +232,7 @@ private:
         utf8 pattern[MAX_PATH];
         String::Set(pattern, sizeof(pattern), directory);
         Path::Append(pattern, sizeof(pattern), "*.dat");
-
-        auto fileEnumerator = FileEnumerator(pattern, true);
-        while (fileEnumerator.Next())
-        {
-            const file_info * enumFileInfo = fileEnumerator.GetFileInfo();
-            const utf8 * enumPath = fileEnumerator.GetPath();
-
-            result->TotalFiles++;
-            result->TotalFileSize += enumFileInfo->size;
-            result->FileDateModifiedChecksum ^=
-                (uint32)(enumFileInfo->last_modified >> 32) ^
-                (uint32)(enumFileInfo->last_modified & 0xFFFFFFFF);
-            result->FileDateModifiedChecksum = ror32(result->FileDateModifiedChecksum, 5);
-            result->PathChecksum += GetPathChecksum(enumPath);
-        }
+        Path::QueryDirectory(result, pattern);
     }
 
     void Construct()
@@ -281,12 +261,13 @@ private:
         String::Set(pattern, sizeof(pattern), directory);
         Path::Append(pattern, sizeof(pattern), "*.dat");
 
-        auto fileEnumerator = FileEnumerator(pattern, true);
-        while (fileEnumerator.Next())
+        IFileScanner * scanner = Path::ScanDirectory(pattern, true);
+        while (scanner->Next())
         {
-            const utf8 * enumPath = fileEnumerator.GetPath();
+            const utf8 * enumPath = scanner->GetPath();
             ScanObject(enumPath);
         }
+        delete scanner;
     }
 
     void ScanObject(const utf8 * path)
@@ -634,8 +615,8 @@ private:
 
     static void GetRepositoryPath(utf8 * buffer, size_t bufferSize)
     {
-        platform_get_user_directory(buffer, nullptr);
-        strcat(buffer, "objects.idx");
+        platform_get_user_directory(buffer, nullptr, bufferSize);
+        safe_strcat_path(buffer, "objects.idx", bufferSize);
     }
 
     static void GetRCT2ObjectPath(utf8 * buffer, size_t bufferSize)
@@ -645,22 +626,7 @@ private:
 
     static void GetUserObjectPath(utf8 * buffer, size_t bufferSize)
     {
-        platform_get_user_directory(buffer, "object");
-    }
-
-    static uint32 GetPathChecksum(const utf8 * path)
-    {
-        uint32 hash = 0xD8430DED;
-        for (const utf8 * ch = path; *ch != '\0'; ch++)
-        {
-            hash += (*ch);
-            hash += (hash << 10);
-            hash ^= (hash >> 6);
-        }
-        hash += (hash << 3);
-        hash ^= (hash >> 11);
-        hash += (hash << 15);
-        return hash;
+        platform_get_user_directory(buffer, "object", bufferSize);
     }
 };
 
@@ -800,7 +766,7 @@ extern "C"
                 return 0;
             }
 
-            size_t chunkSize = sawyercoding_read_chunk(rw, chunk);
+            size_t chunkSize = sawyercoding_read_chunk_with_size(rw, chunk, 0x600000);
             chunk = Memory::Reallocate(chunk, chunkSize);
             if (chunk == nullptr)
             {

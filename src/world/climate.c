@@ -22,10 +22,11 @@
 #include "../game.h"
 #include "../interface/window.h"
 #include "../localisation/date.h"
+#include "../rct2.h"
 #include "../scenario.h"
+#include "../sprites.h"
 #include "../util/util.h"
 #include "climate.h"
-#include "../sprites.h"
 
 enum {
 	THUNDER_STATUS_NULL = 0,
@@ -296,10 +297,10 @@ static void climate_update_thunder_sound()
 
 static void climate_update_lightning()
 {
-	if (_lightningTimer == 0 || gConfigGeneral.disable_lightning_effect || 
+	if (_lightningTimer == 0 || gConfigGeneral.disable_lightning_effect ||
 		(!gConfigGeneral.render_weather_effects && !gConfigGeneral.render_weather_gloom))
 		return;
-	
+
 	_lightningTimer--;
 	if (gClimateLightningFlash == 0)
 		if ((util_rand() & 0xFFFF) <= 0x2000)
@@ -344,6 +345,14 @@ static int climate_play_thunder(int instanceIndex, int soundId, int volume, int 
 }
 
 #pragma region Climate / Weather data tables
+
+/** rct2: 0x0098195C */
+const FILTER_PALETTE_ID ClimateWeatherGloomColours[4] = {
+	0,
+	PALETTE_DARKEN_1,
+	PALETTE_DARKEN_2,
+	PALETTE_DARKEN_3,
+};
 
 // rct2: 0x00993C94
 // There is actually a sprite at 0x5A9C for snow but only these weather types seem to be fully implemented

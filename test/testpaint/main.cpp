@@ -23,9 +23,12 @@
 #include <sys/mman.h>
 #endif // defined(__unix__)
 
+#include "PaintIntercept.hpp"
+#include "TestTrack.hpp"
+#include "Utils.hpp"
+
 extern "C" {
 #include "data.h"
-#include "intercept.h"
 #include "../../src/rct2.h"
 #include "../../src/ride/ride.h"
 #include "../../src/ride/ride_data.h"
@@ -41,10 +44,12 @@ typedef struct {
 enum CLIColour {
 	DEFAULT,
 	RED,
+	YELLOW,
 	GREEN,
 };
 
 bool gTestColor = true;
+Verbosity _verbosity = NORMAL;
 
 static bool CStringEquals(const char *lhs, const char *rhs) {
 	if (lhs == NULL) return rhs == NULL;
@@ -95,6 +100,8 @@ static const char* GetAnsiColorCode(CLIColour color) {
 	switch (color) {
 		case RED:     return "1";
 		case GREEN:   return "2";
+		case YELLOW:
+			return "3";
 		default:            return NULL;
 	};
 }
@@ -113,16 +120,16 @@ static WORD GetWindowsConsoleAttribute(CLIColour color, WORD defaultAttr)
 	switch (color) {
 	case RED:     return FOREGROUND_RED;
 	case GREEN:   return FOREGROUND_GREEN;
+	case YELLOW:  return FOREGROUND_RED | FOREGROUND_GREEN;
 	default:      return defaultAttr;
 	};
 }
 
 #endif
 
-static void ColouredPrintF(CLIColour colour, const char* fmt, ...)
+static void Write_VA(Verbosity verbosity, CLIColour colour, const char *fmt, va_list args)
 {
-	va_list args;
-	va_start(args, fmt);
+	if (_verbosity < verbosity) return;
 
 	COLOUR_METHOD colourMethod = GetColourMethod();
 
@@ -141,6 +148,37 @@ static void ColouredPrintF(CLIColour colour, const char* fmt, ...)
 		SetConsoleTextAttribute(hStdOut, defaultAttr);
 #endif
 	}
+}
+
+static void Write(Verbosity verbosity, CLIColour colour, const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	Write_VA(verbosity, colour, fmt, args);
+	va_end(args);
+}
+
+static void Write(Verbosity verbosity, const char * fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	Write_VA(verbosity, DEFAULT, fmt, args);
+	va_end(args);
+}
+
+static void Write(CLIColour colour, const char * fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	Write_VA(NORMAL, colour, fmt, args);
+	va_end(args);
+}
+
+static void Write(const char * fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	Write_VA(NORMAL, DEFAULT, fmt, args);
 	va_end(args);
 }
 
@@ -218,7 +256,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 __declspec(dllexport) int StartOpenRCT(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	
+
 	if (_dllModule == NULL) {
 		_dllModule = GetModuleHandleA(OPENRCT2_DLL_MODULE_NAME);
 	}
@@ -233,7 +271,7 @@ __declspec(dllexport) int StartOpenRCT(HINSTANCE hInstance, HINSTANCE hPrevInsta
 		free(argv[i]);
 	}
 	free(argv);
-	
+
 	exit(gExitCode);
 	return gExitCode;
 }
@@ -262,7 +300,9 @@ static bool openrct2_setup_rct2_segment()
 	// necessary. Windows does not need to do this as OpenRCT2 runs as a DLL loaded from the Windows PE.
 	int len = 0x01429000 - 0x8a4000; // 0xB85000, 12079104 bytes or around 11.5MB
 	int err = 0;
-
+    // in some configurations err and len may be unused
+    UNUSED(err);
+    UNUSED(len);
 #if defined(__unix__)
 	int pageSize = getpagesize();
 	int numPages = (len + pageSize - 1) / pageSize;
@@ -337,7 +377,7 @@ static void PrintRideTypes()
 {
 	for (uint8 rideType = 0; rideType < 91; rideType++) {
 		CLIColour colour = CLIColour::DEFAULT;
-		bool implemented = rideIsImplemented(rideType);
+		bool implemented = Utils::rideIsImplemented(rideType);
 		const char * rideName = RideNames[rideType];
 		const char * status = "";
 		if (implemented) {
@@ -345,19 +385,59 @@ static void PrintRideTypes()
 			colour = CLIColour::GREEN;
 		}
 
-		ColouredPrintF(colour, "%2d: %-30s%s\n", rideType, rideName, status);
+		Write(colour, "%2d: %-30s%s\n", rideType, rideName, status);
 	}
 }
 
+#include "GeneralSupportHeightCall.hpp"
+
+static void TestGeneralSupportHeightCall() {
+	SupportCall callA = {16, 0x20};
+	SupportCall callB = {32, 0x20};
+	SupportCall callC = {48, 0x20};
+	SupportCall callD = {48, 0x1F};
+
+	SupportCall out = {0,0};
+	bool success;
+
+	SupportCall groupA[4] = {callA, callA, callA, callA};
+	success = GeneralSupportHeightCall::FindMostCommonSupportCall(groupA, &out);
+	assert(success);
+	assert(out == callA);
+
+	SupportCall groupB[4] = {callB, callA, callA, callA};
+	success = GeneralSupportHeightCall::FindMostCommonSupportCall(groupB, &out);
+	assert(success);
+	assert(out == callA);
+
+	SupportCall groupC[4] = {callB, callA, callB, callA};
+	success = GeneralSupportHeightCall::FindMostCommonSupportCall(groupC, &out);
+	assert(!success);
+
+	SupportCall groupD[4] = {callB, callC, callB, callA};
+	success = GeneralSupportHeightCall::FindMostCommonSupportCall(groupD, &out);
+	assert(!success);
+
+	SupportCall groupE[4] = {callD, callC, callB, callA};
+	success = GeneralSupportHeightCall::FindMostCommonSupportCall(groupE, &out);
+	assert(!success);
+}
+
 int main(int argc, char *argv[]) {
+	TestGeneralSupportHeightCall();
+
 	std::vector<TestCase> testCases;
 
+	bool generate = false;
 	uint8 specificRideType = 0xFF;
 	for (int i = 0; i < argc; ++i) {
 		char *arg = argv[i];
 		if (strcmp(arg, "--gtest_color=no") == 0) {
 			gTestColor = false;
 		}
+        else if (strcmp(arg, "--quiet") == 0) {
+			_verbosity = Verbosity::QUIET;
+        }
 		else if (strcmp(arg, "--ride-type") == 0) {
 			if (i + 1 < argc) {
 				i++;
@@ -367,6 +447,21 @@ int main(int argc, char *argv[]) {
 				return 2;
 			}
 		}
+		else if (strcmp(arg, "--generate") == 0) {
+			generate = true;
+		}
+	}
+
+	if (generate) {
+		if (specificRideType > 90) {
+			fprintf(stderr, "No ride or invalid ride specified.\n");
+			return 1;
+		}
+
+		openrct2_setup_rct2_segment();
+		PaintIntercept::InitHooks();
+
+		return generatePaintCode(specificRideType);
 	}
 
 	for (uint8 rideType = 0; rideType < 91; rideType++) {
@@ -374,7 +469,7 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		if (!rideIsImplemented(rideType)) {
+		if (!Utils::rideIsImplemented(rideType)) {
 			continue;
 		}
 
@@ -385,7 +480,7 @@ int main(int argc, char *argv[]) {
 			testCase.trackTypes.push_back(RideConstructionDefaultTrackType[rideType]);
 		} else {
 			for (int trackType = 0; trackType < 256; trackType++) {
-				if (rideSupportsTrackType(rideType, trackType)) {
+				if (Utils::rideSupportsTrackType(rideType, trackType)) {
 					testCase.trackTypes.push_back(trackType);
 				}
 			}
@@ -400,20 +495,20 @@ int main(int argc, char *argv[]) {
 		testCount += tc.trackTypes.size();
 	}
 
-	ColouredPrintF(CLIColour::GREEN, "[==========] ");
-	printf("Running %d tests from %d test cases.\n", testCount, testCaseCount);
+	Write(CLIColour::GREEN, "[==========] ");
+	Write("Running %d tests from %d test cases.\n", testCount, testCaseCount);
 
-	ColouredPrintF(CLIColour::GREEN, "[----------] ");
-	printf("Global test environment set-up.\n");
+	Write(CLIColour::GREEN, "[----------] ");
+	Write("Global test environment set-up.\n");
 	openrct2_setup_rct2_segment();
-	initHooks();
+	PaintIntercept::InitHooks();
 
 	int successCount = 0;
 	std::vector<utf8string> failures;
 	for (auto &&tc : testCases) {
 		const utf8string rideTypeName = RideNames[tc.rideType];
-		ColouredPrintF(CLIColour::GREEN, "[----------] ");
-		printf("%d tests from %s\n", (int)tc.trackTypes.size(), rideTypeName);
+		Write(CLIColour::GREEN, "[----------] ");
+		Write("%d tests from %s\n", (int)tc.trackTypes.size(), rideTypeName);
 
 		for (auto &&trackType : tc.trackTypes) {
 			utf8string trackTypeName;
@@ -423,50 +518,65 @@ int main(int argc, char *argv[]) {
 				trackTypeName = TrackNames[trackType];
 			}
 
-			ColouredPrintF(CLIColour::GREEN, "[ RUN      ] ");
-			printf("%s.%s\n", rideTypeName, trackTypeName);
-			bool success = testTrackPainting(tc.rideType, trackType);
-			if (!success) {
-				utf8string testCaseName = new utf8[64];
-				sprintf(testCaseName, "%s.%s", rideTypeName, trackTypeName);
+			Write(CLIColour::GREEN, "[ RUN      ] ");
+			Write("%s.%s\n", rideTypeName, trackTypeName);
 
-				ColouredPrintF(CLIColour::RED, "[  FAILED  ] ");
-				printf("%s (0 ms)\n", testCaseName);
-				failures.push_back(testCaseName);
-			} else {
-				ColouredPrintF(CLIColour::GREEN, "[       OK ] ");
-				printf("%s.%s (0 ms)\n", rideTypeName, trackTypeName);
-				successCount++;
+			std::string out;
+			int retVal = TestTrack::TestPaintTrackElement(tc.rideType, trackType, &out);
+			Write("%s", out.c_str());
+			switch (retVal) {
+				case TEST_SUCCESS:
+					Write(CLIColour::GREEN, "[       OK ] ");
+					Write("%s.%s (0 ms)\n", rideTypeName, trackTypeName);
+					successCount++;
+					break;
+
+				case TEST_SKIPPED:
+					Write("Skipped\n");
+					// Outputting this as OK because CLion only allows FAILED or OK
+					Write(CLIColour::YELLOW, "[       OK ] ");
+					Write("%s.%s (0 ms)\n", rideTypeName, trackTypeName);
+					successCount++;
+					break;
+
+				case TEST_FAILED:
+					utf8string testCaseName = new utf8[64];
+					snprintf(testCaseName, 64, "%s.%s", rideTypeName, trackTypeName);
+
+					Write(CLIColour::RED, "[  FAILED  ] ");
+					Write("%s (0 ms)\n", testCaseName);
+					failures.push_back(testCaseName);
+					break;
 			}
 		}
 
-		ColouredPrintF(CLIColour::GREEN, "[----------] ");
-		printf("%d tests from %s (0 ms total)\n",  (int)tc.trackTypes.size(), rideTypeName);
+		Write(CLIColour::GREEN, "[----------] ");
+		Write("%d tests from %s (0 ms total)\n",  (int)tc.trackTypes.size(), rideTypeName);
 	}
-	printf("\n");
+	Write("\n");
 
-	ColouredPrintF(CLIColour::GREEN, "[----------] ");
-	printf("Global test environment tear-down\n");
+	Write(CLIColour::GREEN, "[----------] ");
+	Write("Global test environment tear-down\n");
 
-	ColouredPrintF(CLIColour::GREEN, "[==========] ");
-	printf("%d tests from %d test cases ran. (0 ms total).\n", testCount, testCaseCount);
+	Write(CLIColour::GREEN, "[==========] ");
+	Write("%d tests from %d test cases ran. (0 ms total).\n", testCount, testCaseCount);
 
-	ColouredPrintF(CLIColour::GREEN, "[  PASSED  ] ");
-	printf("%d tests.\n", successCount);
+	Write(Verbosity::QUIET, CLIColour::GREEN, "[  PASSED  ] ");
+	Write(Verbosity::QUIET, "%d tests.\n", successCount);
 
 	if (failures.size() > 0) {
-		ColouredPrintF(CLIColour::RED, "[  FAILED  ] ");
-		printf("%d tests, listed below:\n", (int)failures.size());
+		Write(Verbosity::QUIET, CLIColour::RED, "[  FAILED  ] ");
+		Write(Verbosity::QUIET, "%d tests, listed below:\n", (int)failures.size());
 
 		for (auto &&failure : failures) {
-			ColouredPrintF(CLIColour::RED, "[  FAILED  ] ");
-			printf("%s\n", failure);
+			Write(Verbosity::QUIET, CLIColour::RED, "[  FAILED  ] ");
+			Write(Verbosity::QUIET, "%s\n", failure);
 			delete [] failure;
 		}
 
-		printf("\n");
+		Write(Verbosity::QUIET, "\n");
 
-		printf("%d FAILED TESTS\n", (int)failures.size());
+		Write(Verbosity::QUIET, "%d FAILED TESTS\n", (int)failures.size());
 
 		return 1;
 	}

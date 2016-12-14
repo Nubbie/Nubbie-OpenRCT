@@ -32,6 +32,7 @@ extern "C"
     #include "../management/research.h"
     #include "../openrct2.h"
     #include "../peep/staff.h"
+    #include "../rct2.h"
     #include "../ride/ride.h"
     #include "../ride/ride_ratings.h"
     #include "../scenario.h"
@@ -352,6 +353,7 @@ void S6Importer::Import()
     }
     map_update_tile_pointers();
     game_convert_strings_to_utf8();
+    map_count_remaining_land_rights();
     if (FixIssues)
     {
         game_fix_save_vars();
@@ -383,7 +385,7 @@ extern "C"
             s6Importer->LoadSavedGame(rw);
             s6Importer->Import();
 
-            openrct2_reset_object_tween_locations();
+            sprite_position_tween_reset();
             result = true;
         }
         catch (ObjectLoadException)
@@ -410,7 +412,7 @@ extern "C"
             s6Importer->LoadSavedGame(path);
             s6Importer->Import();
 
-            openrct2_reset_object_tween_locations();
+            sprite_position_tween_reset();
             result = true;
         }
         catch (ObjectLoadException)
@@ -450,7 +452,7 @@ extern "C"
             s6Importer->LoadScenario(path);
             s6Importer->Import();
 
-            openrct2_reset_object_tween_locations();
+            sprite_position_tween_reset();
             result = true;
         }
         catch (ObjectLoadException)
@@ -484,7 +486,7 @@ extern "C"
             s6Importer->LoadSavedGame(rw);
             s6Importer->Import();
 
-            openrct2_reset_object_tween_locations();
+            sprite_position_tween_reset();
             result = true;
         }
         catch (ObjectLoadException)

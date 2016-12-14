@@ -69,10 +69,12 @@ extern colour_t gStaffSecurityColour;
 
 void game_command_update_staff_colour(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
 void game_command_hire_new_staff_member(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
+void game_command_callback_hire_new_staff_member(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp);
 void game_command_set_staff_order(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
 void game_command_set_staff_patrol(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
 void game_command_fire_staff_member(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
 void game_command_set_staff_name(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
+void game_command_pickup_staff(int* eax, int* ebx, int* ecx, int* edx, int* esi, int* edi, int* ebp);
 
 void staff_reset_modes();
 void update_staff_colour(uint8 staffType, uint16 colour);
@@ -85,6 +87,6 @@ bool staff_is_patrol_area_set(int staffIndex, int x, int y);
 void staff_set_patrol_area(int staffIndex, int x, int y, bool value);
 void staff_toggle_patrol_area(int staffIndex, int x, int y);
 colour_t staff_get_colour(uint8 staffType);
-void staff_set_colour(uint8 staffType, colour_t value);
+bool staff_set_colour(uint8 staffType, colour_t value);
 
 #endif

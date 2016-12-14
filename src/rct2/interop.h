@@ -13,3 +13,12 @@
  * A full copy of the GNU General Public License can be found in licence.txt
  *****************************************************************************/
 #pragma endregion
+
+#ifndef _RCT2_INTEROP_H_
+#define _RCT2_INTEROP_H_
+
+bool rct2_interop_setup_segment();
+void rct2_interop_setup_hooks();
+void rct2_interop_dispose();
+
+#endif

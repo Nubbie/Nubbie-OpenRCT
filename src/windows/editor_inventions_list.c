@@ -14,9 +14,9 @@
  *****************************************************************************/
 #pragma endregion
 
-#include "../cursors.h"
 #include "../editor.h"
 #include "../input.h"
+#include "../interface/Cursors.h"
 #include "../interface/themes.h"
 #include "../interface/widget.h"
 #include "../interface/window.h"
@@ -419,9 +419,7 @@ static void move_research_item(rct_research_item *beforeItem)
 	rct_window *w;
 	rct_research_item *researchItem, draggedItem;
 
-	// We only really care about `_editorInventionsListDraggedItem == beforeItem - 1`,
-	// but this would cause a GCC warning due to -Warray-bounds
-	if (_editorInventionsListDraggedItem < beforeItem)
+	if (_editorInventionsListDraggedItem + 1 == beforeItem)
 		return;
 
 	// Back up the dragged item
@@ -569,7 +567,7 @@ void window_editor_inventions_list_open()
  *  rct2: 0x006853D2
  */
 static void window_editor_inventions_list_close(rct_window *w)
-{	
+{
 	research_remove_flags();
 
 	// When used in-game (as a cheat)
@@ -761,12 +759,12 @@ static void window_editor_inventions_list_paint(rct_window *w, rct_drawpixelinfo
 	// Pre-researched items label
 	x = w->x + w->widgets[WIDX_PRE_RESEARCHED_SCROLL].left;
 	y = w->y + w->widgets[WIDX_PRE_RESEARCHED_SCROLL].top - 11;
-	gfx_draw_string_left(dpi, STR_INVENTION_PREINVENTED_ITEMS, NULL, 0, x, y - 1);
+	gfx_draw_string_left(dpi, STR_INVENTION_PREINVENTED_ITEMS, NULL, COLOUR_BLACK, x, y - 1);
 
 	// Research order label
 	x = w->x + w->widgets[WIDX_RESEARCH_ORDER_SCROLL].left;
 	y = w->y + w->widgets[WIDX_RESEARCH_ORDER_SCROLL].top - 11;
-	gfx_draw_string_left(dpi, STR_INVENTION_TO_BE_INVENTED_ITEMS, NULL, 0, x, y - 1);
+	gfx_draw_string_left(dpi, STR_INVENTION_TO_BE_INVENTED_ITEMS, NULL, COLOUR_BLACK, x, y - 1);
 
 	// Preview background
 	widget = &w->widgets[WIDX_PREVIEW];
@@ -819,13 +817,13 @@ static void window_editor_inventions_list_paint(rct_window *w, rct_drawpixelinfo
 	y = w->y + widget->bottom + 3;
 	width = w->width - w->widgets[WIDX_RESEARCH_ORDER_SCROLL].right - 6;
 	stringId = research_item_get_name(eax);
-	gfx_draw_string_centred_clipped(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, 0, x, y, width);
+	gfx_draw_string_centred_clipped(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y, width);
 	y += 15;
 
 	// Item category
 	x = w->x + w->widgets[WIDX_RESEARCH_ORDER_SCROLL].right + 4;
 	stringId = EditorInventionsResearchCategories[researchItem->category];
-	gfx_draw_string_left(dpi, STR_INVENTION_RESEARCH_GROUP, &stringId, 0, x, y);
+	gfx_draw_string_left(dpi, STR_INVENTION_RESEARCH_GROUP, &stringId, COLOUR_BLACK, x, y);
 }
 
 /**
@@ -834,7 +832,6 @@ static void window_editor_inventions_list_paint(rct_window *w, rct_drawpixelinfo
  */
 static void window_editor_inventions_list_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int scrollIndex)
 {
-	uint32 colour;
 	rct_research_item *researchItem;
 	int left, top, bottom, itemY, disableItemMovement;
 	sint32 researchItemEndMarker;
@@ -842,9 +839,8 @@ static void window_editor_inventions_list_scrollpaint(rct_window *w, rct_drawpix
 	utf8 buffer[256], *ptr;
 
 	// Draw background
-	colour = ColourMapA[w->colours[1]].mid_light;
-	colour = (colour << 24) | (colour << 16) | (colour << 8) | colour;
-	gfx_clear(dpi, colour);
+	uint8 paletteIndex = ColourMapA[w->colours[1]].mid_light;
+	gfx_clear(dpi, paletteIndex);
 
 	researchItem = gResearchItems;
 
@@ -864,7 +860,7 @@ static void window_editor_inventions_list_scrollpaint(rct_window *w, rct_drawpix
 		if (itemY + 10 < dpi->y || itemY >= dpi->y + dpi->height)
 			continue;
 
-		colour = 142;
+		uint8 colour = COLOUR_BRIGHT_GREEN | COLOUR_FLAG_TRANSLUCENT;
 		if (w->research_item == researchItem) {
 			if (_editorInventionsListDraggedItem == NULL) {
 				// Highlight
@@ -875,10 +871,10 @@ static void window_editor_inventions_list_scrollpaint(rct_window *w, rct_drawpix
 				top = itemY - 1;
 				bottom = itemY;
 			}
-			gfx_fill_rect(dpi, 0, top, w->width, bottom, 0x2000031);
+			gfx_filter_rect(dpi, 0, top, w->width, bottom, PALETTE_DARKEN_1);
 
 			if (_editorInventionsListDraggedItem == NULL)
-				colour = 14;
+				colour = COLOUR_BRIGHT_GREEN;
 		}
 
 		if (researchItem->entryIndex == RESEARCHED_ITEMS_SEPARATOR || researchItem->entryIndex == RESEARCHED_ITEMS_END)
@@ -892,20 +888,20 @@ static void window_editor_inventions_list_scrollpaint(rct_window *w, rct_drawpix
 
 		ptr = buffer;
 		if (!disableItemMovement) {
-			ptr = utf8_write_codepoint(ptr, colour & 0xFF);
+			ptr = utf8_write_codepoint(ptr, colour);
 		}
 
-		format_string(ptr, stringId, NULL);
+		format_string(ptr, 256, stringId, NULL);
 
 		if (disableItemMovement) {
-			gCurrentFontSpriteBase = -1;
-			if ((colour & 0xFF) == 14 && _editorInventionsListDraggedItem == NULL) {
-				gCurrentFontSpriteBase = -2;
+			gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM_DARK;
+			if (colour == COLOUR_BRIGHT_GREEN && _editorInventionsListDraggedItem == NULL) {
+				gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM_EXTRA_DARK;
 			}
-			colour = 64 | w->colours[1];
+			colour = COLOUR_FLAG_INSET | w->colours[1];
 		} else {
 			gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
-			colour = 0;
+			colour = COLOUR_BLACK;
 		}
 
 		left = 1;
@@ -931,7 +927,7 @@ static void window_editor_inventions_list_drag_open(rct_research_item *researchI
 	_editorInventionsListDraggedItem = researchItem;
 
 	stringId = research_item_get_name(researchItem->entryIndex & 0xFFFFFF);
-	format_string(buffer, stringId, NULL);
+	format_string(buffer, 256, stringId, NULL);
 	stringWidth = gfx_get_string_width(buffer);
 	window_editor_inventions_list_drag_widgets[0].right = stringWidth;
 
@@ -945,7 +941,7 @@ static void window_editor_inventions_list_drag_open(rct_research_item *researchI
 		WF_STICK_TO_FRONT | WF_TRANSPARENT | WF_NO_SNAPPING
 	);
 	w->widgets = window_editor_inventions_list_drag_widgets;
-	w->colours[1] = 2;
+	w->colours[1] = COLOUR_WHITE;
 	input_window_position_begin(w, 0, gTooltipCursorX, gTooltipCursorY);
 }
 
@@ -999,7 +995,7 @@ static void window_editor_inventions_list_drag_paint(rct_window *w, rct_drawpixe
 	x = w->x;
 	y = w->y + 2;
 	stringId = research_item_get_name(_editorInventionsListDraggedItem->entryIndex & 0xFFFFFF);
-	gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, 32, x, y);
+	gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK | COLOUR_FLAG_OUTLINE, x, y);
 }
 
 #pragma endregion

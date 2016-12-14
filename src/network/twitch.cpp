@@ -42,8 +42,9 @@ extern "C"
     #include "../localisation/localisation.h"
     #include "../management/news_item.h"
     #include "../peep/peep.h"
-    #include "../world/sprite.h"
+    #include "../rct2.h"
     #include "../util/util.h"
+    #include "../world/sprite.h"
     #include "http.h"
     #include "twitch.h"
 }
@@ -88,9 +89,9 @@ namespace Twitch
             json_t * isMod = json_object_get(json, "isMod");
 
             member.Name = json_string_value(name);
-            member.IsFollower = json_boolean_value(isFollower);
-            member.IsInChat = json_boolean_value(isInChat);
-            member.IsMod = json_boolean_value(isMod);
+            member.IsFollower = json_is_true(isFollower);
+            member.IsInChat = json_is_true(isInChat);
+            member.IsMod = json_is_true(isMod);
             member.Exists = false;
             member.ShouldTrack = false;
             return member;
@@ -415,7 +416,7 @@ namespace Twitch
             if (is_user_string_id(peep->name_string_idx))
             {
                 utf8 buffer[256];
-                format_string(buffer, peep->name_string_idx, NULL);
+                format_string(buffer, 256, peep->name_string_idx, NULL);
 
                 AudienceMember * member = nullptr;
                 for (AudienceMember &m : members)
@@ -505,27 +506,6 @@ namespace Twitch
         }
     }
 
-    /**
-     * Like strchr but allows searching for one of many characters.
-     */
-    static char * strchrm(const char * str, const char * find)
-    {
-        do
-        {
-            const char * fch = find;
-            while (*fch != '\0')
-            {
-                if (*str == *fch)
-                {
-                    return (char *)str;
-                }
-                fch++;
-            }
-        }
-        while (*str++ != '\0');
-        return nullptr;
-    }
-
     static char * strskipwhitespace(const char * str)
     {
         while (*str == ' ' || *str == '\t')
@@ -546,17 +526,16 @@ namespace Twitch
         // Skip '!'
         message++;
 
-        // Set buffer to the next word / token and skip
-        char buffer[32];
-        const char * ch = strchrm(message, " \t");
-        safe_strcpy(buffer, message, Math::Min(sizeof(buffer), (size_t)(ch - message + 1)));
-        ch = strskipwhitespace(ch);
-
-        // Check what the word / token is
-        if (String::Equals(buffer, "news", true))
-        {
-            DoChatMessageNews(ch);
+        // Check that command is "news"
+        const char *ch, *cmd;
+        for (ch = message, cmd = "news"; *cmd != '\0'; ++ch, ++cmd) {
+            if (*ch != *cmd) return;
         }
+
+        if (!isspace(*ch)) return;
+
+        ch = strskipwhitespace(ch);
+        DoChatMessageNews(ch);
     }
 
     static void DoChatMessageNews(const char * message)

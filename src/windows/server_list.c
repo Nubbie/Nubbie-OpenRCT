@@ -417,11 +417,8 @@ static void window_server_list_paint(rct_window *w, rct_drawpixelinfo *dpi)
 
 static void window_server_list_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int scrollIndex)
 {
-	uint32 colour;
-
-	colour = ColourMapA[w->colours[1]].mid_light;
-	colour = (colour << 24) | (colour << 16) | (colour << 8) | colour;
-	gfx_clear(dpi, colour);
+	uint8 paletteIndex = ColourMapA[w->colours[1]].mid_light;
+	gfx_clear(dpi, paletteIndex);
 
 	int width = w->widgets[WIDX_LIST].right - w->widgets[WIDX_LIST].left;
 
@@ -436,7 +433,7 @@ static void window_server_list_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi
 
 		// Draw hover highlight
 		if (highlighted) {
-			gfx_fill_rect(dpi, 0, y, width, y + ITEM_HEIGHT, 0x02000031);
+			gfx_filter_rect(dpi, 0, y, width, y + ITEM_HEIGHT, PALETTE_DARKEN_1);
 			gVersion = serverDetails->version;
 			w->widgets[WIDX_LIST].tooltip = STR_NETWORK_VERSION_TIP;
 		}
@@ -480,7 +477,7 @@ static void window_server_list_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi
 		char players[32];
 		players[0] = 0;
 		if (serverDetails->maxplayers > 0) {
-			sprintf(players, "%d/%d", serverDetails->players, serverDetails->maxplayers);
+			snprintf(players, 32, "%d/%d", serverDetails->players, serverDetails->maxplayers);
 		}
 		int numPlayersStringWidth = gfx_get_string_width(players);
 		gfx_draw_string(dpi, players, w->colours[1], right - numPlayersStringWidth, y + 3);
@@ -525,8 +522,8 @@ static void server_list_load_server_entries()
 	utf8 path[MAX_PATH];
 	SDL_RWops *file;
 
-	platform_get_user_directory(path, NULL);
-	strcat(path, "servers.cfg");
+	platform_get_user_directory(path, NULL, sizeof(path));
+	safe_strcat_path(path, "servers.cfg", sizeof(path));
 
 	file = SDL_RWFromFile(path, "rb");
 	if (file == NULL) {
@@ -564,8 +561,8 @@ static void server_list_save_server_entries()
 	utf8 path[MAX_PATH];
 	SDL_RWops *file;
 
-	platform_get_user_directory(path, NULL);
-	strcat(path, "servers.cfg");
+	platform_get_user_directory(path, NULL, sizeof(path));
+	safe_strcat_path(path, "servers.cfg", sizeof(path));
 
 	file = SDL_RWFromFile(path, "wb");
 	if (file == NULL) {
@@ -838,7 +835,7 @@ static void fetch_servers_callback(http_json_response* response)
 		SafeFree(newserver->description);
 		SafeFree(newserver->version);
 		newserver->name = _strdup(json_string_value(name));
-		newserver->requiresPassword = json_boolean_value(requiresPassword);
+		newserver->requiresPassword = json_is_true(requiresPassword);
 		newserver->description = _strdup(description == NULL ? "" : json_string_value(description));
 		newserver->version = _strdup(json_string_value(version));
 		newserver->players = (uint8)json_integer_value(players);

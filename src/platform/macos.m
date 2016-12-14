@@ -29,8 +29,9 @@ bool platform_check_steam_overlay_attached() {
 	return false;
 }
 
-void platform_get_exe_path(utf8 *outPath)
+void platform_get_exe_path(utf8 *outPath, size_t outSize)
 {
+	if (outSize == 0) return;
 	char exePath[MAX_PATH];
 	uint32_t size = MAX_PATH;
 	int result = _NSGetExecutablePath(exePath, &size);
@@ -38,17 +39,16 @@ void platform_get_exe_path(utf8 *outPath)
 		log_fatal("failed to get path");
 	}
 	exePath[MAX_PATH - 1] = '\0';
-	char *exeDelimiter = strrchr(exePath, platform_get_path_separator());
+	char *exeDelimiter = strrchr(exePath, *PATH_SEPARATOR);
 	if (exeDelimiter == NULL)
 	{
 		log_error("should never happen here");
 		outPath[0] = '\0';
 		return;
 	}
-	int exeDelimiterIndex = (int)(exeDelimiter - exePath);
+	*exeDelimiter = '\0';
 
-	safe_strcpy(outPath, exePath, exeDelimiterIndex + 1);
-	outPath[exeDelimiterIndex] = '\0';
+	safe_strcpy(outPath, exePath, outSize);
 }
 
 /**
@@ -56,22 +56,19 @@ void platform_get_exe_path(utf8 *outPath)
  *   - (command line argument)
  *   - ~/Library/Application Support/OpenRCT2
  */
-void platform_posix_sub_user_data_path(char *buffer, const char *homedir, const char *separator) {
+void platform_posix_sub_user_data_path(char *buffer, size_t size, const char *homedir) {
 	if (homedir == NULL)
 	{
 		log_fatal("Couldn't find user data directory");
 		exit(-1);
 		return;
 	}
-	
-	strncat(buffer, homedir, MAX_PATH - 1);
-	strncat(buffer, separator, MAX_PATH - strnlen(buffer, MAX_PATH) - 1);
-	strncat(buffer, "Library", MAX_PATH - strnlen(buffer, MAX_PATH) - 1);
-	strncat(buffer, separator, MAX_PATH - strnlen(buffer, MAX_PATH) - 1);
-	strncat(buffer, "Application Support", MAX_PATH - strnlen(buffer, MAX_PATH) - 1);
-	strncat(buffer, separator, MAX_PATH - strnlen(buffer, MAX_PATH) - 1);
-	strncat(buffer, "OpenRCT2", MAX_PATH - strnlen(buffer, MAX_PATH) - 1);
-	strncat(buffer, separator, MAX_PATH - strnlen(buffer, MAX_PATH) - 1);
+
+	safe_strcpy(buffer, homedir, size);
+	safe_strcat_path(buffer, "Library", size);
+	safe_strcat_path(buffer, "Application Support", size);
+	safe_strcat_path(buffer, "OpenRCT2", size);
+	path_end_with_separator(buffer, size);
 }
 
 /**
@@ -80,7 +77,7 @@ void platform_posix_sub_user_data_path(char *buffer, const char *homedir, const 
  *   - <exePath>/data
  *   - <Resources Folder>
  */
-void platform_posix_sub_resolve_openrct_data_path(utf8 *out) {
+void platform_posix_sub_resolve_openrct_data_path(utf8 *out, size_t size) {
 	@autoreleasepool
 	{
 		NSBundle *bundle = [NSBundle mainBundle];
@@ -90,7 +87,7 @@ void platform_posix_sub_resolve_openrct_data_path(utf8 *out) {
 			if (platform_directory_exists(resources))
 			{
 				out[0] = '\0';
-				safe_strcpy(out, resources, MAX_PATH);
+				safe_strcpy(out, resources, size);
 				return;
 			}
 		}
@@ -121,14 +118,13 @@ utf8 *platform_open_directory_browser(utf8 *title)
 		{
 			NSString *selectedPath = panel.URL.path;
 			const char *path = selectedPath.UTF8String;
-			url = (utf8*)malloc(strlen(path) + 1);
-			strcpy(url,path);
+			url = _strdup(path);
 		}
 		return url;
 	}
 }
 
-bool platform_open_common_file_dialog(utf8 *outFilename, file_dialog_desc *desc) {
+bool platform_open_common_file_dialog(utf8 *outFilename, file_dialog_desc *desc, size_t outSize) {
 	@autoreleasepool
 	{
 		NSMutableArray *extensions = [NSMutableArray new];
@@ -139,7 +135,7 @@ bool platform_open_common_file_dialog(utf8 *outFilename, file_dialog_desc *desc)
 				[extensions addObjectsFromArray:[fp componentsSeparatedByString:@";"]];
 			}
 		}
-		
+
 		NSString *directory;
 		NSSavePanel *panel;
 		if (desc->type == FD_SAVE)
@@ -161,7 +157,7 @@ bool platform_open_common_file_dialog(utf8 *outFilename, file_dialog_desc *desc)
 		} else {
 			return false;
 		}
-		
+
 		panel.title = [NSString stringWithUTF8String:desc->title];
 		panel.allowedFileTypes = extensions;
 		panel.directoryURL = [NSURL fileURLWithPath:directory];
@@ -169,14 +165,14 @@ bool platform_open_common_file_dialog(utf8 *outFilename, file_dialog_desc *desc)
 			SDL_RaiseWindow(gWindow);
 			return false;
 		} else {
-			strcpy(outFilename, panel.URL.path.UTF8String);
+			safe_strcpy(outFilename, panel.URL.path.UTF8String, outSize);
 			SDL_RaiseWindow(gWindow);
 			return true;
 		}
 	}
 }
 
-bool platform_get_font_path(TTFFontDescriptor *font, utf8 *buffer)
+bool platform_get_font_path(TTFFontDescriptor *font, utf8 *buffer, size_t size)
 {
 	@autoreleasepool
 	{
@@ -184,7 +180,7 @@ bool platform_get_font_path(TTFFontDescriptor *font, utf8 *buffer)
 		CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(fontRef, kCTFontURLAttribute);
 		if (url) {
 			NSString *fontPath = [NSString stringWithString:[(NSURL *)CFBridgingRelease(url) path]];
-			strcpy(buffer, fontPath.UTF8String);
+			safe_strcpy(buffer, fontPath.UTF8String, size);
 			return true;
 		} else {
 			return false;
@@ -200,17 +196,17 @@ bool platform_has_matching_language(NSString *preferredLocale, uint16* languageI
 			*languageIdentifier = LANGUAGE_ENGLISH_US;
 			return YES;
 		}
-		
+
 		if ([preferredLocale isEqualToString:@"zh-CN"]) {
 			*languageIdentifier = LANGUAGE_CHINESE_SIMPLIFIED;
 			return YES;
 		}
-		
+
 		if ([preferredLocale isEqualToString:@"zh-TW"]) {
 			*languageIdentifier = LANGUAGE_CHINESE_TRADITIONAL;
 			return YES;
 		}
-		
+
 		// Find an exact match (language and region)
 		for (int i = 1; i < LANGUAGE_COUNT; i++) {
 			if([preferredLocale isEqualToString:[NSString stringWithUTF8String:LanguagesDescriptors[i].locale]]) {
@@ -218,8 +214,8 @@ bool platform_has_matching_language(NSString *preferredLocale, uint16* languageI
 				return YES;
 			}
 		}
-		
-		
+
+
 		// Only check for a matching language
 		NSString *languageCode = [[preferredLocale componentsSeparatedByString:@"-"] firstObject];
 		for (int i = 1; i < LANGUAGE_COUNT; i++) {
@@ -229,7 +225,7 @@ bool platform_has_matching_language(NSString *preferredLocale, uint16* languageI
 				return YES;
 			}
 		}
-		
+
 		return NO;
 	}
 }
@@ -245,7 +241,7 @@ uint16 platform_get_locale_language()
 				return languageIdentifier;
 			}
 		}
-		
+
 		// Fallback
 		return LANGUAGE_ENGLISH_UK;
 	}
@@ -269,7 +265,7 @@ uint8 platform_get_locale_measurement_format()
 		if (metricSystem.boolValue) {
 			return MEASUREMENT_FORMAT_METRIC;
 		}
-		
+
 		return MEASUREMENT_FORMAT_IMPERIAL;
 	}
 }

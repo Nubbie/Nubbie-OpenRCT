@@ -15,11 +15,11 @@
 #pragma endregion
 
 #include "../audio/audio.h"
-#include "../cursors.h"
 #include "../drawing/drawing.h"
 #include "../editor.h"
 #include "../game.h"
 #include "../input.h"
+#include "../interface/Cursors.h"
 #include "../localisation/localisation.h"
 #include "../localisation/string_ids.h"
 #include "../platform/platform.h"
@@ -358,7 +358,7 @@ static void window_close_surplus(int cap, sint8 avoid_classification)
 		}
 	}
 	//difference between amount open and cap = amount to close
-	diff = count - WINDOW_LIMIT_RESERVED - cap; 
+	diff = count - WINDOW_LIMIT_RESERVED - cap;
 	for (i = 0; i < diff; i++) {
 		rct_window *w = NULL;
 		//iterates through the list until it finds the newest window, or a window that can be closed
@@ -1701,7 +1701,7 @@ void window_draw_widgets(rct_window *w, rct_drawpixelinfo *dpi)
 	int widgetIndex;
 
 	if ((w->flags & WF_TRANSPARENT) && !(w->flags & WF_NO_BACKGROUND))
-		gfx_fill_rect(dpi, w->x, w->y, w->x + w->width - 1, w->y + w->height - 1, 0x2000000 | 51);
+		gfx_filter_rect(dpi, w->x, w->y, w->x + w->width - 1, w->y + w->height - 1, PALETTE_51);
 
 	//todo: some code missing here? Between 006EB18C and 006EB260
 
@@ -1718,7 +1718,7 @@ void window_draw_widgets(rct_window *w, rct_drawpixelinfo *dpi)
 	//todo: something missing here too? Between 006EC32B and 006EC369
 
 	if (w->flags & WF_WHITE_BORDER_MASK) {
-		gfx_fill_rect_inset(dpi, w->x, w->y, w->x + w->width - 1, w->y + w->height - 1, 2, 0x10);
+		gfx_fill_rect_inset(dpi, w->x, w->y, w->x + w->width - 1, w->y + w->height - 1, COLOUR_WHITE, INSET_RECT_FLAG_FILL_NONE);
 	}
 }
 
@@ -2130,7 +2130,7 @@ void window_resize_gui(int width, int height)
 
 	rct_window *titleWind = window_find_by_class(WC_TITLE_MENU);
 	if (titleWind != NULL) {
-		titleWind->x = width / 2 - 164;
+		titleWind->x = (width - titleWind->width) / 2;
 		titleWind->y = height - 142;
 	}
 
@@ -2470,7 +2470,7 @@ void window_start_textbox(rct_window *call_w, int call_widget, rct_string_id exi
 	// Enter in the the text input buffer any existing
 	// text.
 	if (existing_text != STR_NONE)
-		format_string(gTextBoxInput, existing_text, &existing_args);
+		format_string(gTextBoxInput, 512, existing_text, &existing_args);
 
 	// In order to prevent strings that exceed the maxLength
 	// from crashing the game.

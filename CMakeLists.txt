@@ -60,8 +60,44 @@ execute_process(
 )
 add_definitions(-DOPENRCT2_COMMIT_SHA1_SHORT="${OPENRCT2_COMMIT_SHA1_SHORT}")
 
+# Convenience functions to set compiler flags only if available
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
+function(ADD_CHECK_C_COMPILER_FLAG
+    _CFLAGS
+    _CACHE_VAR
+    _FLAG
+    )
+
+    CHECK_C_COMPILER_FLAG("${_FLAG}" "${_CACHE_VAR}")
+    if(${_CACHE_VAR})
+        # message(STATUS "Using CFLAG: ${_FLAG}")
+        set(${_CFLAGS} "${${_CFLAGS}} ${_FLAG}" PARENT_SCOPE)
+    else()
+        message(STATUS "Unsupported CFLAG: ${_FLAG}")
+    endif()
+endfunction()
+
+function(ADD_CHECK_CXX_COMPILER_FLAG
+    _CXXFLAGS
+    _CACHE_VAR
+    _FLAG
+    )
+
+    CHECK_CXX_COMPILER_FLAG("${_FLAG}" "${_CACHE_VAR}")
+    if(${_CACHE_VAR})
+        # message(STATUS "Using CXXFLAG: ${_FLAG}")
+        set(${_CXXFLAGS} "${${_CXXFLAGS}} ${_FLAG}" PARENT_SCOPE)
+    else()
+        message(STATUS "Unsupported CXXFLAG: ${_FLAG}")
+    endif()
+endfunction()
+
+# pkg-config
 INCLUDE(FindPkgConfig)
 
+# Needed for linking with non-broken OpenSSL on Apple platforms
 if (APPLE)
 	set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/openssl/lib/pkgconfig")
 endif (APPLE)
@@ -75,33 +111,33 @@ endif (DISABLE_HTTP_TWITCH)
 
 option(DISABLE_NETWORK "Disable multiplayer functionality. Mainly for testing.")
 option(STATIC "Create a static build.")
-option(FORCE64 "Force native (x86-64) build. Do not use, for experimental purposes only.")
+option(FORCE32 "Force 32-bit build. It will add `-m32` to compiler flags")
 option(DISABLE_OPENGL "Disable OpenGL support.")
-option(DISABLE_RCT2 "Build a standalone version, without using code and data segments from vanilla.")
+option(DISABLE_RCT2 "Build a standalone version, without using code and data segments from vanilla. On by default." ON)
 option(USE_MMAP "Use mmap to try loading rct2's data segment into memory.")
-option(LAUNCHPAD_BUILD "Sets some build system options on launchpad.net")
+option(WITH_TESTS "Build tests")
 
-set(COMMON_COMPILE_OPTIONS "${COMMON_COMPILE_OPTIONS} -fstrict-aliasing -Werror -Wundef -Wmissing-declarations -Winit-self -Warray-bounds -Waddress -Wchar-subscripts -Wenum-compare")
+set(COMMON_COMPILE_OPTIONS "${COMMON_COMPILE_OPTIONS} -fstrict-aliasing -Werror -Wundef -Wmissing-declarations -Winit-self -Wall -Wno-unknown-pragmas -Wno-unused-function -Wno-missing-braces -Wno-comment")
 
 # On mingw all code is already PIC, this will avoid compiler error on redefining this option
 if(NOT MINGW)
 	set(COMMON_COMPILE_OPTIONS "${COMMON_COMPILE_OPTIONS} -fPIC")
 endif()
 
-if (LAUNCHPAD_BUILD)
-	# Launchpad turns on -Wdate-time for compilers that support it, this shouldn't break our build
-	set(COMMON_COMPILE_OPTIONS "${COMMON_COMPILE_OPTIONS} -Wno-error=date-time")
-else()
-	if (FORCE64)
-		set(TARGET_M "-m64")
-	else ()
-		set(TARGET_M "-m32")
-	endif()
+if (NOT DISABLE_RCT2)
+	set (FORCE32 ON)
+	message("DISABLE_RCT2 implies FORCE32")
 endif()
 
-if (FORCE64)
-	set (DISABLE_RCT2 ON)
-else ()
+# Launchpad turns on -Wdate-time for compilers that support it, this shouldn't break our build
+ADD_CHECK_C_COMPILER_FLAG(CMAKE_C_FLAGS C_WARN_WRITE_STRINGS -Wno-error=date-time)
+ADD_CHECK_CXX_COMPILER_FLAG(CMAKE_CXX_FLAGS CXX_WARN_WRITE_STRINGS -Wno-error=date-time)
+
+if (FORCE32)
+	set(TARGET_M "-m32")
+endif()
+
+if (FORCE32)
 	set(OBJ_FORMAT "elf32-i386")
 	set(LINKER_SCRIPT "ld_script_i386.xc")
 endif ()
@@ -146,7 +182,7 @@ if (NOT PNG_FOUND)
 endif (NOT PNG_FOUND)
 
 PKG_CHECK_MODULES(ZLIB REQUIRED zlib)
-PKG_CHECK_MODULES(JANSSON REQUIRED jansson>=2.7)
+PKG_CHECK_MODULES(JANSSON REQUIRED jansson>=2.3)
 
 # Handle creating the rct2 text and data files on macOS and Linux
 # See details in src/openrct2.c:openrct2_setup_rct2_segment for how the values
@@ -261,6 +297,9 @@ if (NOT DISABLE_OPENGL)
 	if (WIN32)
 		# Curl depends on openssl and ws2 in mingw builds, but is not wired up in pkg-config
 		set(GLLIBS opengl32)
+		# mingw complains about "%zu" not being a valid format specifier for printf, unless we
+		# tell it that it is
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__USE_MINGW_ANSI_STDIO=1")
 	elseif (APPLE)
 		# GL doesn't work nicely with macOS, while find_package doesn't work with multiarch on Ubuntu.
 		find_package(OpenGL REQUIRED)
@@ -361,13 +400,26 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/g2.dat" DESTINATION share/${PROJECT})
 install(DIRECTORY data/ DESTINATION share/${PROJECT})
 install(FILES ${DOC_FILES} DESTINATION share/doc/${PROJECT})
 
-if (UNIX AND (NOT USE_MMAP) AND (NOT DISABLE_RCT2) AND (NOT FORCE64))
+install(FILES resources/logo/icon_x16.png DESTINATION share/icons/hicolor/16x16/apps RENAME openrct2.png)
+install(FILES resources/logo/icon_x32.png DESTINATION share/icons/hicolor/32x32/apps RENAME openrct2.png)
+install(FILES resources/logo/icon_x64.png DESTINATION share/icons/hicolor/64x64/apps RENAME openrct2.png)
+install(FILES resources/logo/icon_x128.png DESTINATION share/icons/hicolor/128x128/apps RENAME openrct2.png)
+install(FILES resources/logo/icon_x256.png DESTINATION share/icons/hicolor/256x256/apps RENAME openrct2.png)
+install(FILES resources/logo/icon_flag.svg DESTINATION share/icons/hicolor/scalable/apps RENAME openrct2.svg)
+install(FILES distribution/linux/openrct2.desktop DESTINATION share/applications)
+
+if (WITH_TESTS)
+	enable_testing()
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test/tests/)
+endif ()
+
+if (UNIX AND (NOT USE_MMAP) AND (NOT DISABLE_RCT2) AND (FORCE32))
 	file(GLOB_RECURSE ORCT2_RIDE_SOURCES "src/ride/*/*.c")
 	file(GLOB_RECURSE ORCT2_RIDE_DEP_SOURCES "src/ride/ride_data.c" "src/ride/track_data.c" "src/ride/track_data_old.c" "src/ride/track_paint.c" "src/addresses.c" "src/diagnostic.c" "src/hook.c" "src/paint/map_element/map_element.c" "src/paint/paint_helpers.c")
 	file(GLOB_RECURSE ORCT2_TESTPAINT_SOURCES "test/testpaint/*.c" "test/testpaint/*.cpp" "test/testpaint/*.h")
 
 	add_executable(testpaint EXCLUDE_FROM_ALL ${ORCT2_RIDE_SOURCES} ${ORCT2_RIDE_DEP_SOURCES} ${ORCT2_TESTPAINT_SOURCES} ${RCT2_SECTIONS})
-	set_target_properties(testpaint PROPERTIES COMPILE_FLAGS "-DNO_VEHICLES -D__TESTPAINT__")
+	set_target_properties(testpaint PROPERTIES COMPILE_FLAGS "-DNO_VEHICLES -D__TESTPAINT__ -Wno-unused")
 	add_dependencies(testpaint segfiles)
 endif ()
 

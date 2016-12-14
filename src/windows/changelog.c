@@ -21,6 +21,7 @@
 #include "../localisation/localisation.h"
 #include "../openrct2.h"
 #include "../platform/platform.h"
+#include "../rct2.h"
 #include "../util/util.h"
 #include "../world/footpath.h"
 #include "../world/map.h"
@@ -205,7 +206,8 @@ static bool window_changelog_read_file()
 {
 	window_changelog_dispose_file();
 	utf8 path[MAX_PATH];
-	sprintf(path, "%s%cchangelog.txt", gExePath, platform_get_path_separator());
+	safe_strcpy(path, gExePath, MAX_PATH);
+	safe_strcat_path(path, "changelog.txt", MAX_PATH);
 	if (!readentirefile(path, (void**)&_changelogText, &_changelogTextSize)) {
 		log_error("Unable to read changelog.txt");
 		return false;

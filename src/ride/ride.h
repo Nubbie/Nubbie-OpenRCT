@@ -299,7 +299,7 @@ typedef struct rct_ride {
 	uint8 downtime_history[8];		// 0x19C
 	uint32 no_primary_items_sold;	// 0x1A4
 	uint32 no_secondary_items_sold; // 0x1A8
-	uint8 breakdown_sound_modifier;	// 0x1AC 
+	uint8 breakdown_sound_modifier;	// 0x1AC
 	// Used to oscilate the sound when ride breaks down.
 	// 0 = no change, 255 = max change
 	uint8 not_fixed_timeout;		// 0x1AD
@@ -445,7 +445,7 @@ enum {
 	RIDE_ENTRY_FLAG_28 = 1 << 28, // 0x10000000
 	RIDE_ENTRY_FLAG_29 = 1 << 29, // 0x20000000
 	RIDE_ENTRY_FLAG_30 = 1 << 30, // 0x40000000
-	RIDE_ENTRY_FLAG_31 = 1 << 31, // 0x80000000
+	RIDE_ENTRY_FLAG_31 = 1u << 31, // 0x80000000
 };
 
 enum{
@@ -785,7 +785,7 @@ enum {
 	RIDE_TYPE_FLAG_HAS_TRACK = 1 << 28,
 	RIDE_TYPE_FLAG_29 = 1 << 29,								// used only by lift
 	RIDE_TYPE_FLAG_30 = 1 << 30,
-	RIDE_TYPE_FLAG_SUPPORTS_MULTIPLE_TRACK_COLOUR = 1 << 31,
+	RIDE_TYPE_FLAG_SUPPORTS_MULTIPLE_TRACK_COLOUR = 1u << 31,
 };
 
 enum {
@@ -880,6 +880,20 @@ enum {
 	RIDE_SETTING_LIFT_HILL_SPEED,
 	RIDE_SETTING_NUM_CIRCUITS,
 	RIDE_SETTING_RIDE_TYPE,
+};
+
+enum {
+	MAZE_WALL_TYPE_BRICK,
+	MAZE_WALL_TYPE_HEDGE,
+	MAZE_WALL_TYPE_ICE,
+	MAZE_WALL_TYPE_WOOD,
+};
+
+enum {
+	TRACK_SELECTION_FLAG_ARROW            = 1 << 0,
+	TRACK_SELECTION_FLAG_TRACK            = 1 << 1,
+	TRACK_SELECTION_FLAG_ENTRANCE_OR_EXIT = 1 << 2,
+	TRACK_SELECTION_FLAG_RECHECK          = 1 << 3,
 };
 
 typedef struct rct_ride_properties {
@@ -1039,6 +1053,7 @@ void ride_set_name(int rideIndex, const char *name);
 void game_command_set_ride_name(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
 void game_command_set_ride_setting(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
 int ride_get_refund_price(int ride_id);
+bool shop_item_is_photo(int shopItem);
 bool shop_item_has_common_price(int shopItem);
 void game_command_create_ride(int *eax, int *ebx, int *ecx, int *edx, int *esi, int *edi, int *ebp);
 void game_command_callback_ride_construct_new(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp);
@@ -1051,6 +1066,10 @@ void game_command_set_ride_price(int *eax, int *ebx, int *ecx, int *edx, int *es
 money32 ride_create_command(int type, int subType, int flags, uint8 *outRideIndex, uint8 *outRideColour);
 
 void ride_clear_for_construction(int rideIndex);
+void ride_restore_provisional_entrance_or_exit();
+void ride_remove_provisional_entrance_or_exit();
+void ride_restore_provisional_track_piece();
+void ride_remove_provisional_track_piece();
 void set_vehicle_type_image_max_sizes(rct_ride_entry_vehicle* vehicle_type, int num_images);
 void invalidate_test_results(int rideIndex);
 
@@ -1130,8 +1149,8 @@ const uint8* ride_seek_available_modes(rct_ride *ride);
 void window_ride_measurements_design_cancel();
 void window_ride_construction_mouseup_demolish_next_piece(int x, int y, int z, int direction, int type);
 
-const uint32 ride_customers_per_hour(const rct_ride *ride);
-const uint32 ride_customers_in_last_5_minutes(const rct_ride *ride);
+uint32 ride_customers_per_hour(const rct_ride *ride);
+uint32 ride_customers_in_last_5_minutes(const rct_ride *ride);
 
 rct_vehicle * ride_get_broken_vehicle(rct_ride *ride);
 
@@ -1141,5 +1160,8 @@ void game_command_callback_place_ride_entrance_or_exit(int eax, int ebx, int ecx
 
 void ride_delete(uint8 rideIndex);
 money16 ride_get_price(rct_ride * ride);
+
+rct_map_element *get_station_platform(int x, int y, int z, int z_tolerance);
+bool ride_has_adjacent_station(rct_ride *ride);
 
 #endif

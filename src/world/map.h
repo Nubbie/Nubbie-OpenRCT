@@ -150,6 +150,7 @@ enum {
 	MAP_ELEMENT_FLAG_GHOST = (1 << 4),
 	MAP_ELEMENT_FLAG_BROKEN = (1 << 5),
 	MAP_ELEMENT_FLAG_BLOCK_BRAKE_CLOSED = (1 << 5),
+	MAP_ELEMENT_FLAG_CANNOT_REMOVE_TRACK = (1 << 6),
 	MAP_ELEMENT_FLAG_LAST_TILE = (1 << 7)
 };
 
@@ -383,15 +384,20 @@ extern money32 gWaterToolRaiseCost;
 extern money32 gWaterToolLowerCost;
 extern money32 gLandRightsCost;
 
+extern uint16 gLandRemainingOwnershipSales;
+extern uint16 gLandRemainingConstructionSales;
+
 extern rct_xyz16 gCommandPosition;
 
 extern uint8 gUnk9E2E28;
 
 void map_init(int size);
+void map_count_remaining_land_rights();
 void map_update_tile_pointers();
 rct_map_element *map_get_first_element_at(int x, int y);
 void map_set_tile_elements(int x, int y, rct_map_element *elements);
 int map_element_is_last_for_tile(const rct_map_element *element);
+uint8 map_element_get_scenery_quadrant(const rct_map_element *element);
 int map_element_get_type(const rct_map_element *element);
 int map_element_get_direction(const rct_map_element *element);
 int map_element_get_terrain(const rct_map_element *element);
@@ -422,7 +428,7 @@ void map_remove_all_rides();
 void map_invalidate_map_selection_tiles();
 void map_invalidate_selection_rect();
 void map_reorganise_elements();
-int sub_68B044();
+bool map_check_free_elements_and_reorganise(int num_elements);
 rct_map_element *map_element_insert(int x, int y, int z, int flags);
 
 typedef int (CLEAR_FUNC)(rct_map_element** map_element, int x, int y, uint8 flags, money32* price);

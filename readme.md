@@ -52,14 +52,20 @@ OpenRCT2 requires original files of RollerCoaster Tycoon 2 to play. It can be bo
 
 ### Windows:
 - Vista / 7 / 8 / 10
-- Visual Studio 2015 Update 2 (Enterprise / Professional / [Community (Free)](https://www.visualstudio.com/products/visual-studio-community-vs))
+- Visual Studio 2015 Update 2+ (Enterprise / Professional / [Community (Free)](https://www.visualstudio.com/products/visual-studio-community-vs))
 - [7-Zip](http://www.7-zip.org/) (for deployment only)
 - [NSIS](http://nsis.sourceforge.net/) (for deployment only)
 
-### Mac:
-- [Homebrew](http://brew.sh)
+### macOS:
+- Xcode 8
 
-### Mac / Linux:
+The program can also be built as a command line program using CMake. This type of build requires:
+
+- Xcode Command Line Tools
+- [Homebrew](http://brew.sh)
+- CMake (available through Homebrew)
+
+### Linux:
 - sdl2
 - sdl2-ttf
 - speexdsp
@@ -73,36 +79,49 @@ All libs listed here (bar cmake) required in 32 bit variants.
 ### Windows:
 1. Check out the repository. This can be done using [GitHub Desktop](https://desktop.github.com) or [other tools](https://help.github.com/articles/which-remote-url-should-i-use).
 2. Open a new Developer Command Prompt for VS2015, then navigate to the repository (e.g. `cd C:\GitHub\OpenRCT2`).
-3. Run `msbuild openrct2.proj /t:build`.
+3. Run `msbuild openrct2.proj /t:build /p:platform=x64`.
+4. Run the game, `bin\openrct2`
 
 Once you have ran msbuild once, further development can be done within Visual Studio by opening `openrct2.sln`.
 
 Other examples:
 ```
+set platform=x64
 msbuild openrct2.proj /t:clean
-msbuild openrct2.proj /t:rebuild /p:configuration=release /p:platform=x64
+msbuild openrct2.proj /t:rebuild /p:configuration=release
 msbuild openrct2.proj /t:g2
 msbuild openrct2.proj /t:PublishPortable
 ```
 
-### Mac:
-We support native builds for macOS (limited to i386 only for now).
-Make sure that you have [Homebrew](http://brew.sh/) installed and than run the following commands to install all the needed libraries and build OpenRCT2.
-```
-# Install libraries
-./install.sh
+### macOS:
+#### Xcode:
+The recommended way of building OpenRCT2 for macOS is with Xcode. The Xcode build will create a self-contained application bundles which include all the necessary game files and dependencies. Open the project file OpenRCT2.xcodeproj in Xcode and build from there. Building this way will handle the dependencies for you automatically. You can also invoke an Xcode build from the command line using `xcodebuild`.
 
-# Build OpenRCT2
-./build.sh
-
-# Run the game
-./openrct2
+#### CMake:
+A command line version of OpenRCT2 can be built using CMake. This type of build requires you to provide the dependencies yourself. The supported method of doing this is with [Homebrew](http://brew.sh). Once you have Homebrew installed, you can download all the required libraries with this command:
 ```
+brew install cmake openssl jansson libpng sdl2 sdl2_ttf speex
+```
+
+Once you have the dependencies installed, you can build the project using CMake using the following commands:
+```
+mkdir build
+cd build
+cmake ..
+make
+ln -s ../data data
+```
+Then you can run the game by running `./openrct2`.
 
 ### Linux:
-We support native builds for Linux (limited to i386 only for now).
-As the easiest approach depends on your distribution, please take a look at the [wiki](https://github.com/OpenRCT2/OpenRCT2/wiki/Building-OpenRCT2-on-Linux).
-
+The standard CMake build procedure is to install the [required libraries](https://github.com/OpenRCT2/OpenRCT2#mac--linux), then:
+```
+mkdir build
+cd build
+cmake ../
+make
+```
+Detailed instructions can be found on our [wiki](https://github.com/OpenRCT2/OpenRCT2/wiki/Building-OpenRCT2-on-Linux).
 
 # 4 Contributing
 OpenRCT2 uses the [gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). If you are implementing a new feature or logic from the original game, please branch off and perform pull requests to ```develop```. If you are fixing a bug for the next release, please branch off and perform pull requests to the correct release branch. ```master``` only contains tagged releases, you should never branch off this.

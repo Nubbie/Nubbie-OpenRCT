@@ -15,12 +15,10 @@
 #pragma endregion
 
 #include "../../cheats.h"
-#include "../../common.h"
 #include "../../config.h"
 #include "../../interface/viewport.h"
 #include "../../peep/staff.h"
-#include "../../world/map.h"
-#include "../paint.h"
+#include "../../rct2.h"
 #include "map_element.h"
 #include "surface.h"
 
@@ -336,9 +334,9 @@ static void viewport_surface_smoothen_edge(enum edge edge, struct tile_descripto
 		return;
 	}
 
-	uint32 maskImageBase;
-	uint8 neighbourCorners[2];
-	uint8 ownCorners[2];
+	uint32 maskImageBase = 0;
+	uint8 neighbourCorners[2] = { 0 };
+	uint8 ownCorners[2] = { 0 };
 
 	switch (edge) {
 		case EDGE_BOTTOMLEFT:
@@ -376,7 +374,7 @@ static void viewport_surface_smoothen_edge(enum edge edge, struct tile_descripto
 		return;
 	}
 
-	uint8 dh, cl;
+	uint8 dh = 0, cl = 0;
 	switch(edge) {
 		case EDGE_BOTTOMLEFT:
 			dh = byte_97B524[byte_97B444[self.slope]];
@@ -609,6 +607,8 @@ static void viewport_surface_draw_land_side_bottom(enum edge edge, uint8 height,
 		}
 	}
 
+	regs.ah = regs.cl;
+
 	while (true) {
 		if (curHeight >= regs.al || curHeight >= regs.cl) {
 			// If top of edge isn't straight, add a filler
@@ -632,7 +632,7 @@ static void viewport_surface_draw_land_side_bottom(enum edge edge, uint8 height,
 			// Normal walls
 			while (curHeight > tunnelArray[0].height) {
 				// TODO: Should probably be done by just keeping track of the current index
-				memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * 64);
+				memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * (TUNNEL_MAX_COUNT - 1));
 			}
 
 			if (curHeight != tunnelArray[0].height) {
@@ -642,7 +642,7 @@ static void viewport_surface_draw_land_side_bottom(enum edge edge, uint8 height,
 				continue;
 			}
 		}
-		
+
 		// Tunnels
 		uint8 tunnelType = tunnelArray[0].type;
 		uint8 tunnelHeight = stru_97B570[tunnelType][0];
@@ -680,7 +680,7 @@ static void viewport_surface_draw_land_side_bottom(enum edge edge, uint8 height,
 		curHeight += stru_97B570[tunnelType][0];
 
 		// TODO: Should probably be done by just keeping track of the current index
-		memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * 64);
+		memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * (TUNNEL_MAX_COUNT - 1));
 	}
 }
 
@@ -879,6 +879,8 @@ static void viewport_surface_draw_water_side_bottom(enum edge edge, uint8 height
 		}
 	}
 
+	regs.ah = regs.cl;
+
 	while (true) {
 		if (curHeight >= regs.al || curHeight >= regs.cl) {
 			// If top of edge isn't straight, add a filler
@@ -902,7 +904,7 @@ static void viewport_surface_draw_water_side_bottom(enum edge edge, uint8 height
 			// Normal walls
 			while (curHeight > tunnelArray[0].height) {
 				// TODO: Should probably be done by just keeping track of the current index
-				memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * 64);
+				memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * (TUNNEL_MAX_COUNT - 1));
 			}
 
 			sub_98196C(base_image_id, offset.x, offset.y, bounds.x, bounds.y, 15, curHeight * 16, rotation);
@@ -948,7 +950,7 @@ static void viewport_surface_draw_water_side_bottom(enum edge edge, uint8 height
 		curHeight += stru_97B570[tunnelType][0];
 
 		// TODO: Should probably be done by just keeping track of the current index
-		memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * 64);
+		memmove(&tunnelArray[0], &tunnelArray[1], sizeof(tunnel_entry) * (TUNNEL_MAX_COUNT - 1));
 	}
 }
 
@@ -1109,7 +1111,7 @@ void surface_paint(uint8 direction, uint16 height, rct_map_element * mapElement)
 
 		}
 
-		sub_98196C(image_id, 0, 0, 32, 32, 255, height, rotation);
+		sub_98196C(image_id, 0, 0, 32, 32, -1, height, rotation);
 		has_surface = true;
 	}
 
@@ -1312,18 +1314,18 @@ void surface_paint(uint8 direction, uint16 height, rct_map_element * mapElement)
 			log_verbose("eax: %d", eax);
 		}
 
-		tunnel_entry backupLeftTunnels[65];
-		tunnel_entry backupRightTunnels[65];
+		tunnel_entry backupLeftTunnels[TUNNEL_MAX_COUNT];
+		tunnel_entry backupRightTunnels[TUNNEL_MAX_COUNT];
 
 #ifdef __MINGW32__
 		// The other code crashes mingw 4.8.2, as available on Travis
-		for (int i = 0; i < 65; i++) {
+		for (int i = 0; i < TUNNEL_MAX_COUNT; i++) {
 			backupLeftTunnels[i] = gLeftTunnels[i];
 			backupRightTunnels[i] = gRightTunnels[i];
 		}
 #else
-		memcpy(backupLeftTunnels, gLeftTunnels, sizeof(tunnel_entry) * 65);
-		memcpy(backupRightTunnels, gRightTunnels, sizeof(tunnel_entry) * 65);
+		memcpy(backupLeftTunnels, gLeftTunnels, sizeof(tunnel_entry) * TUNNEL_MAX_COUNT);
+		memcpy(backupRightTunnels, gRightTunnels, sizeof(tunnel_entry) * TUNNEL_MAX_COUNT);
 #endif
 
 		viewport_surface_draw_land_side_top(EDGE_TOPLEFT, height / 16, eax / 32, tileDescriptors[0], tileDescriptors[3]);
@@ -1334,13 +1336,13 @@ void surface_paint(uint8 direction, uint16 height, rct_map_element * mapElement)
 
 #ifdef __MINGW32__
 		// The other code crashes mingw 4.8.2, as available on Travis
-		for (int i = 0; i < 65; i++) {
+		for (int i = 0; i < TUNNEL_MAX_COUNT; i++) {
 			gLeftTunnels[i] = backupLeftTunnels[i];
 			gRightTunnels[i] = backupRightTunnels[i];
 		}
 #else
-		memcpy(gLeftTunnels, backupLeftTunnels, sizeof(tunnel_entry) * 65);
-		memcpy(gRightTunnels, backupRightTunnels, sizeof(tunnel_entry) * 65);
+		memcpy(gLeftTunnels, backupLeftTunnels, sizeof(tunnel_entry) * TUNNEL_MAX_COUNT);
+		memcpy(gRightTunnels, backupRightTunnels, sizeof(tunnel_entry) * TUNNEL_MAX_COUNT);
 #endif
 	}
 
@@ -1359,7 +1361,7 @@ void surface_paint(uint8 direction, uint16 height, rct_map_element * mapElement)
 				image_offset = byte_97B740[surfaceShape & 0xF];
 			}
 
-			int image_id = (SPR_WATER_MASK + image_offset) | 0x61000000;
+			int image_id = (SPR_WATER_MASK + image_offset) | 0x60000000 | PALETTE_WATER << 19;
 			sub_98196C(image_id, 0, 0, 32, 32, -1, waterHeight, rotation);
 
 			paint_attach_to_previous_ps(SPR_WATER_OVERLAY + image_offset, 0, 0);

@@ -19,9 +19,10 @@
 #include "../interface/window.h"
 #include "../localisation/date.h"
 #include "../localisation/localisation.h"
+#include "../rct2.h"
 #include "../ride/ride.h"
-#include "../world/sprite.h"
 #include "../util/util.h"
+#include "../world/sprite.h"
 #include "news_item.h"
 
 rct_news_item gNewsItems[MAX_NEWS_ITEMS];
@@ -282,7 +283,7 @@ void news_item_add_to_queue(uint8 type, rct_string_id string_id, uint32 assoc)
 	utf8 buffer[256];
 	void *args = gCommonFormatArgs;
 
-	format_string(buffer, string_id, args); // overflows possible?
+	format_string(buffer, 256, string_id, args); // overflows possible?
 	news_item_add_to_queue_raw(type, buffer, assoc);
 }
 

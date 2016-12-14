@@ -17,12 +17,13 @@
 #include "../audio/audio.h"
 #include "../cheats.h"
 #include "../game.h"
-#include "../localisation/localisation.h"
 #include "../input.h"
 #include "../interface/themes.h"
-#include "../interface/widget.h"
 #include "../interface/viewport.h"
+#include "../interface/widget.h"
 #include "../interface/window.h"
+#include "../localisation/localisation.h"
+#include "../rct2.h"
 #include "../sprites.h"
 #include "../world/footpath.h"
 #include "../world/scenery.h"
@@ -375,12 +376,12 @@ static void window_map_mouseup(rct_window *w, int widgetIndex)
  			w->selected_tab = widgetIndex;
  			w->list_information_type = 0;
 			break;
-	
+
 	case WIDX_MAP_GENERATOR:
 			window_mapgen_open();
 			break;
  		}
-		
+
  		break;
  	}
  }
@@ -822,7 +823,7 @@ static void window_map_paint(rct_window *w, rct_drawpixelinfo *dpi)
 
 	// Draw land tool size
 	if (widget_is_active_tool(w, WIDX_SET_LAND_RIGHTS) && gLandToolSize > 7) {
-		gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, 0, &gLandToolSize);
+		gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, COLOUR_BLACK, &gLandToolSize);
 	}
 	y = w->y + window_map_widgets[WIDX_LAND_TOOL].bottom + 5;
 
@@ -852,7 +853,7 @@ static void window_map_paint(rct_window *w, rct_drawpixelinfo *dpi)
 
 			for (i = 0; i < 8; i++) {
 				gfx_fill_rect(dpi, x, y + 2, x + 6, y + 8, RideKeyColours[i]);
-				gfx_draw_string_left(dpi, mapLabels[i], w, 0, x + 10, y);
+				gfx_draw_string_left(dpi, mapLabels[i], w, COLOUR_BLACK, x + 10, y);
 				y += 10;
 				if (i == 3) {
 					x += 118;
@@ -861,7 +862,7 @@ static void window_map_paint(rct_window *w, rct_drawpixelinfo *dpi)
 			}
 		}
 	} else if (!widget_is_active_tool(w, WIDX_SET_LAND_RIGHTS)) {
-		gfx_draw_string_left(dpi, STR_MAP_SIZE, 0, 0, w->x + 4, w->y + w->widgets[WIDX_MAP_SIZE_SPINNER].top + 1);
+		gfx_draw_string_left(dpi, STR_MAP_SIZE, NULL, COLOUR_BLACK, w->x + 4, w->y + w->widgets[WIDX_MAP_SIZE_SPINNER].top + 1);
 	}
 }
 
@@ -873,7 +874,7 @@ static void window_map_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int sc
 {
 	rct_g1_element *g1_element, pushed_g1_element;
 
-	gfx_clear(dpi, 0x0A0A0A0A);
+	gfx_clear(dpi, 10);
 
 	g1_element = &g1Elements[0];
 	pushed_g1_element = *g1_element;
@@ -1230,7 +1231,7 @@ static void sub_666EEF(int x, int y, sint16 *mapX, sint16 *mapY, sint16 *mapZ, i
  */
 static void window_map_place_park_entrance_tool_update(int x, int y)
 {
-	sint16 mapX, mapY, mapZ;
+	sint16 mapX, mapY, mapZ = 0;
 	int direction, sideDirection;
 
 	map_invalidate_selection_rect();

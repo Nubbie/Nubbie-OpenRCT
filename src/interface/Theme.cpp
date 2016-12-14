@@ -35,9 +35,6 @@ extern "C"
 
 struct WindowThemeDesc;
 
-// Don't try to load theme files that exceed 64 MiB
-constexpr uint64 MAX_THEME_SIZE = 64 * 1024 * 1024;
-
 /**
  * Represents a window theming style such as the colour scheme.
  */
@@ -258,7 +255,7 @@ static void ThrowThemeLoadException()
 json_t * UIThemeWindowEntry::ToJson() const
 {
     const WindowThemeDesc * wtDesc = GetWindowThemeDescriptor(WindowClass);
-        
+
     json_t * jsonColours = json_array();
     for (uint8 i = 0; i < wtDesc->NumColours; i++) {
         colour_t colour = Theme.Colours[i];
@@ -285,7 +282,7 @@ UIThemeWindowEntry UIThemeWindowEntry::FromJson(const WindowThemeDesc * wtDesc, 
     UIThemeWindowEntry result;
     result.WindowClass = wtDesc->WindowClass;
     result.Theme = wtDesc->DefaultTheme;
-    
+
     for (uint8 i = 0; i < numColours; i++)
     {
         result.Theme.Colours[i] = (colour_t)json_integer_value(json_array_get(jsonColours, i));
@@ -539,7 +536,7 @@ namespace ThemeManager
                 AvailableTheme theme;
                 Path::GetFileNameWithoutExtension(theme.Name, sizeof(theme.Name), fileInfo.path);
                 GetThemeFileName(theme.Path, sizeof(theme.Path), theme.Name);
-                
+
                 outThemes->push_back(theme);
 
                 if (Path::Equals(CurrentThemePath, fileInfo.path))
@@ -624,7 +621,7 @@ namespace ThemeManager
                 configValid = true;
             }
         }
-        
+
         if (!configValid)
         {
             String::DiscardDuplicate(&gConfigInterface.current_theme_preset, theme_manager_get_available_theme_name(1));
@@ -647,7 +644,7 @@ namespace ThemeManager
 
     void GetThemePath(utf8 * buffer, size_t bufferSize)
     {
-        platform_get_user_directory(buffer, "themes");
+        platform_get_user_directory(buffer, "themes", bufferSize);
     }
 }
 

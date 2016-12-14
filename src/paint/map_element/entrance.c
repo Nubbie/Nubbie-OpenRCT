@@ -24,6 +24,7 @@
 #include "../paint.h"
 #include "../supports.h"
 #include "map_element.h"
+#include "../../drawing/lightfx.h"
 
 static uint32 _unk9E32BC;
 
@@ -33,12 +34,36 @@ static uint32 _unk9E32BC;
  */
 static void ride_entrance_exit_paint(uint8 direction, int height, rct_map_element* map_element)
 {
+
 	uint8 is_exit = map_element->properties.entrance.type == ENTRANCE_TYPE_RIDE_EXIT;
 
 	if (gTrackDesignSaveMode) {
 		if (map_element->properties.entrance.ride_index != gTrackDesignSaveRideIndex)
 			return;
 	}
+
+#ifdef __ENABLE_LIGHTFX__
+
+	if (!is_exit) {
+		lightfx_add_3d_light_magic_from_drawing_tile(0, 0, height + 45, LIGHTFX_LIGHT_TYPE_LANTERN_3);
+	}
+
+	switch (map_element->type & MAP_ELEMENT_DIRECTION_MASK) {
+		case 0:
+			lightfx_add_3d_light_magic_from_drawing_tile(16, 0, height + 16, LIGHTFX_LIGHT_TYPE_LANTERN_2);
+			break;
+		case 1:
+			lightfx_add_3d_light_magic_from_drawing_tile(0, -16, height + 16, LIGHTFX_LIGHT_TYPE_LANTERN_2);
+			break;
+		case 2:
+			lightfx_add_3d_light_magic_from_drawing_tile(-16, 0, height + 16, LIGHTFX_LIGHT_TYPE_LANTERN_2);
+			break;
+		case 3:
+			lightfx_add_3d_light_magic_from_drawing_tile(0, 16, height + 16, LIGHTFX_LIGHT_TYPE_LANTERN_2);
+			break;
+	};
+
+#endif
 
 	rct_ride* ride = get_ride(map_element->properties.entrance.ride_index);
 	if (ride->entrance_style == RIDE_ENTRANCE_STYLE_NONE) return;
@@ -48,7 +73,7 @@ static void ride_entrance_exit_paint(uint8 direction, int height, rct_map_elemen
 	uint8 colour_1, colour_2;
 	uint32 transparant_image_id = 0, image_id = 0;
 	if (style->base_image_id & 0x40000000) {
-		colour_1 = ride->track_colour_main[0] + 0x70;
+		colour_1 = GlassPaletteIds[ride->track_colour_main[0]];
 		transparant_image_id = (colour_1 << 19) | 0x40000000;
 	}
 
@@ -131,9 +156,9 @@ static void ride_entrance_exit_paint(uint8 direction, int height, rct_map_elemen
 
 		utf8 entrance_string[MAX_PATH];
 		if (gConfigGeneral.upper_case_banners) {
-			format_string_to_upper(entrance_string, string_id, gCommonFormatArgs);
+			format_string_to_upper(entrance_string, MAX_PATH, string_id, gCommonFormatArgs);
 		} else {
-			format_string(entrance_string, string_id, gCommonFormatArgs);
+			format_string(entrance_string, MAX_PATH, string_id, gCommonFormatArgs);
 		}
 
 		gCurrentFontSpriteBase = FONT_SPRITE_BASE_TINY;
@@ -163,6 +188,12 @@ static void ride_entrance_exit_paint(uint8 direction, int height, rct_map_elemen
 static void park_entrance_paint(uint8 direction, int height, rct_map_element* map_element){
 	if (gTrackDesignSaveMode)
 		return;
+
+#ifdef __ENABLE_LIGHTFX__
+
+	lightfx_add_3d_light_magic_from_drawing_tile(0, 0, 155, LIGHTFX_LIGHT_TYPE_LANTERN_3);
+
+#endif
 
 	gPaintInteractionType = VIEWPORT_INTERACTION_ITEM_PARK;
 	_unk9E32BC = 0;
@@ -208,9 +239,9 @@ static void park_entrance_paint(uint8 direction, int height, rct_map_element* ma
 
 		utf8 park_name[MAX_PATH];
 		if (gConfigGeneral.upper_case_banners) {
-			format_string_to_upper(park_name, park_text_id, gCommonFormatArgs);
+			format_string_to_upper(park_name, MAX_PATH, park_text_id, gCommonFormatArgs);
 		} else {
-			format_string(park_name, park_text_id, gCommonFormatArgs);
+			format_string(park_name, MAX_PATH, park_text_id, gCommonFormatArgs);
 		}
 
 		gCurrentFontSpriteBase = FONT_SPRITE_BASE_TINY;

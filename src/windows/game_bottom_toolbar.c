@@ -26,6 +26,7 @@
 #include "../management/news_item.h"
 #include "../peep/peep.h"
 #include "../peep/staff.h"
+#include "../rct2.h"
 #include "../sprites.h"
 #include "../world/climate.h"
 #include "../world/park.h"
@@ -333,21 +334,21 @@ void window_game_bottom_toolbar_invalidate_news_item()
 static void window_game_bottom_toolbar_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
 	// Draw panel grey backgrounds
-	gfx_fill_rect(
+	gfx_filter_rect(
 		dpi,
 		w->x + window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].left,
 		w->y + window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].top,
 		w->x + window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].right,
 		w->y + window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].bottom,
-		0x02000033
+		PALETTE_51
 	);
-	gfx_fill_rect(
+	gfx_filter_rect(
 		dpi,
 		w->x + window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].left,
 		w->y + window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].top,
 		w->x + window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].right,
 		w->y + window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].bottom,
-		0x02000033
+		PALETTE_51
 	);
 
 	window_draw_widgets(w, dpi);
@@ -371,7 +372,7 @@ static void window_game_bottom_toolbar_draw_left_panel(rct_drawpixelinfo *dpi, r
 		w->x + window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].right - 1,
 		w->y + window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].bottom - 1,
 		w->colours[1],
-		48
+		INSET_RECT_F_30
 	);
 
 	x = (window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].left + window_game_bottom_toolbar_widgets[WIDX_LEFT_OUTSET].right) / 2 + w->x;
@@ -402,7 +403,7 @@ static void window_game_bottom_toolbar_draw_left_panel(rct_drawpixelinfo *dpi, r
 		dpi,
 		guestCountFormats[gGuestChangeModifier],
 		x, y,
-		(gHoverWidget.window_classification == WC_BOTTOM_TOOLBAR && gHoverWidget.widget_index == WIDX_GUESTS ? COLOUR_WHITE : w->colours[0] & 0x7F),
+		(gHoverWidget.window_classification == WC_BOTTOM_TOOLBAR && gHoverWidget.widget_index == WIDX_GUESTS ? COLOUR_WHITE : NOT_TRANSLUCENT(w->colours[0])),
 		&gNumGuestsInPark
 	);
 
@@ -426,7 +427,7 @@ static void window_game_bottom_toolbar_draw_park_rating(rct_drawpixelinfo *dpi, 
 	short bar_width;
 
 	bar_width = (factor * (90 + WIDTH_MOD)) / 256;
-	gfx_fill_rect_inset(dpi, x, y + 1, x + (93 + WIDTH_MOD), y + 9, w->colours[1], 48);
+	gfx_fill_rect_inset(dpi, x, y + 1, x + (93 + WIDTH_MOD), y + 9, w->colours[1], INSET_RECT_F_30);
 	if (!(colour & 0x80000000) || game_is_paused() || (gCurrentTicks & 8)) {
 		if (bar_width > 2)
 			gfx_fill_rect_inset(dpi, x + 2, y + 2, x + bar_width - 1, y + 8, colour & 0x7FFFFFFF, 0);
@@ -450,7 +451,7 @@ static void window_game_bottom_toolbar_draw_right_panel(rct_drawpixelinfo *dpi, 
 		w->x + window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].right - 1,
 		w->y + window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].bottom - 1,
 		w->colours[1],
-		48
+		INSET_RECT_F_30
 	);
 
 	x = (window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].left + window_game_bottom_toolbar_widgets[WIDX_RIGHT_OUTSET].right) / 2 + w->x;
@@ -470,7 +471,7 @@ static void window_game_bottom_toolbar_draw_right_panel(rct_drawpixelinfo *dpi, 
 		stringId,
 		x,
 		y,
-		(gHoverWidget.window_classification == WC_BOTTOM_TOOLBAR && gHoverWidget.widget_index == WIDX_DATE ? COLOUR_WHITE : w->colours[0] & 0x7F),
+		(gHoverWidget.window_classification == WC_BOTTOM_TOOLBAR && gHoverWidget.widget_index == WIDX_DATE ? COLOUR_WHITE : NOT_TRANSLUCENT(w->colours[0])),
 		gCommonFormatArgs
 	);
 
@@ -485,7 +486,7 @@ static void window_game_bottom_toolbar_draw_right_panel(rct_drawpixelinfo *dpi, 
 		format = STR_FAHRENHEIT_VALUE;
 	}
 	set_format_arg(0, short, temperature);
-	gfx_draw_string_left(dpi, format, gCommonFormatArgs, 0, x, y + 6);
+	gfx_draw_string_left(dpi, format, gCommonFormatArgs, COLOUR_BLACK, x, y + 6);
 	x += 30;
 
 	// Current weather
@@ -521,7 +522,7 @@ static void window_game_bottom_toolbar_draw_news_item(rct_drawpixelinfo *dpi, rc
 		w->x + middleOutsetWidget->right - 1,
 		w->y + middleOutsetWidget->bottom - 1,
 		w->colours[2],
-		48
+		INSET_RECT_F_30
 	);
 
 	// Text
@@ -529,7 +530,7 @@ static void window_game_bottom_toolbar_draw_news_item(rct_drawpixelinfo *dpi, rc
 	x = w->x + (middleOutsetWidget->left + middleOutsetWidget->right) / 2;
 	y = w->y + middleOutsetWidget->top + 11;
 	width = middleOutsetWidget->right - middleOutsetWidget->left - 62;
-	gfx_draw_string_centred_wrapped_partial(dpi, x, y, width, 14, STR_BOTTOM_TOOLBAR_NEWS_TEXT, &newsItemText, newsItem->ticks);
+	gfx_draw_string_centred_wrapped_partial(dpi, x, y, width, COLOUR_BRIGHT_GREEN, STR_BOTTOM_TOOLBAR_NEWS_TEXT, &newsItemText, newsItem->ticks);
 
 	x = w->x + window_game_bottom_toolbar_widgets[WIDX_NEWS_SUBJECT].left;
 	y = w->y + window_game_bottom_toolbar_widgets[WIDX_NEWS_SUBJECT].top;

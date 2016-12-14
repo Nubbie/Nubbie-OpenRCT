@@ -17,8 +17,8 @@
 #include "../addresses.h"
 #include "../common.h"
 #include "../openrct2.h"
-#include "../platform/platform.h"
 #include "../sprites.h"
+#include "../util/util.h"
 #include "drawing.h"
 
 void *_g1Buffer = NULL;
@@ -152,10 +152,9 @@ bool gfx_load_g2()
 	unsigned int i;
 
 	char path[MAX_PATH];
-	char dataPath[MAX_PATH];
 
-	platform_get_openrct_data_path(dataPath);
-	sprintf(path, "%s%cg2.dat", dataPath, platform_get_path_separator());
+	platform_get_openrct_data_path(path, sizeof(path));
+	safe_strcat_path(path, "g2.dat", MAX_PATH);
 	file = SDL_RWFromFile(path, "rb");
 	if (file != NULL) {
 		if (SDL_RWread(file, &g2.header, 8, 1) == 1) {
@@ -296,7 +295,7 @@ uint8* FASTCALL gfx_draw_sprite_get_palette(int image_id, uint32 tertiary_colour
 	int image_type = (image_id & 0xE0000000);
 	if (image_type == 0)
 		return NULL;
-	
+
 	if (!(image_type & IMAGE_TYPE_REMAP_2_PLUS)) {
 		uint8 palette_ref = (image_id >> 19) & 0xFF;
 		if (!(image_type & IMAGE_TYPE_TRANSPARENT)) {
@@ -314,7 +313,7 @@ uint8* FASTCALL gfx_draw_sprite_get_palette(int image_id, uint32 tertiary_colour
 
 		if (!(image_type & IMAGE_TYPE_REMAP)) {
 			palette_pointer = gOtherPalette;
-#ifdef DEBUG_LEVEL_2
+#if defined(DEBUG_LEVEL_2) && DEBUG_LEVEL_2
 			assert(tertiary_colour < PALETTE_TO_G1_OFFSET_COUNT);
 #endif // DEBUG_LEVEL_2
 			uint32 tertiary_offset = palette_to_g1_offset[tertiary_colour];
@@ -326,7 +325,7 @@ uint8* FASTCALL gfx_draw_sprite_get_palette(int image_id, uint32 tertiary_colour
 
 		memcpy(palette_pointer + 0xF3, &primary_palette->offset[0xF3], 12);
 		memcpy(palette_pointer + 0xCA, &secondary_palette->offset[0xF3], 12);
-		
+
 		return palette_pointer;
 	}
 }

@@ -24,17 +24,12 @@ extern "C"
     #include "../localisation/localisation.h"
 }
 
-enum OBJ_STRING_ID
-{
-    OBJ_STRING_ID_NAME,
-};
-
 void BannerObject::ReadLegacy(IReadObjectContext * context, IStream * stream)
 {
     stream->Seek(6, STREAM_SEEK_CURRENT);
     _legacyType.banner.scrolling_mode = stream->ReadValue<uint8>();
     _legacyType.banner.flags = stream->ReadValue<uint8>();
-    _legacyType.banner.price = stream->ReadValue<uint8>();
+    _legacyType.banner.price = stream->ReadValue<sint16>();
     _legacyType.banner.scenery_tab_id = stream->ReadValue<uint8>();
 
     GetStringTable()->Read(context, stream, OBJ_STRING_ID_NAME);

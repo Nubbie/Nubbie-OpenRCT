@@ -14,22 +14,16 @@
  *****************************************************************************/
 #pragma endregion
 
-#ifndef _TEST_PAINT_INTERCEPT_H_
-#define _TEST_PAINT_INTERCEPT_H_
+#pragma once
 
 #include "../../src/common.h"
+#include "FunctionCall.hpp"
 
-#define gRideEntries                RCT2_ADDRESS(RCT2_ADDRESS_RIDE_ENTRIES,                rct_ride_entry*)
-#define gCurrentRotation        RCT2_GLOBAL(RCT2_ADDRESS_CURRENT_ROTATION, uint8)
+namespace PaintIntercept {
+    void InitHooks();
 
-bool testRide(int rideType);
-void initHooks();
-int getTrackSequenceCount(uint8 rideType, uint8 trackType);
-bool rideIsImplemented(int rideType);
-bool rideSupportsTrackType(int rideType, int trackType);
-bool testTrackPainting(int rideType, int trackType);
-bool testSupportSegments(uint8 rideType, uint8 trackType);
-bool testTunnels(uint8 rideType, uint8 trackType);
-bool testVerticalTunnels(uint8 rideType, uint8 trackType);
+    void ClearCalls();
+    int GetCalls(function_call *buffer);
 
-#endif // #endif _TEST_PAINT_INTERCEPT_H_
+    void SetSimulateWoodenSupports(bool enabled);
+};

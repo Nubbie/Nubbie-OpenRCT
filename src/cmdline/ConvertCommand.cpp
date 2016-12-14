@@ -17,6 +17,7 @@
 #include "../common.h"
 #include "../core/Console.hpp"
 #include "../core/Exception.hpp"
+#include "../core/Guard.hpp"
 #include "../core/Path.hpp"
 #include "../rct1/S4Importer.h"
 #include "CommandLine.hpp"
@@ -24,9 +25,9 @@
 extern "C"
 {
     #include "../game.h"
-    #include "../scenario.h"
-    #include "../openrct2.h"
     #include "../interface/window.h"
+    #include "../openrct2.h"
+    #include "../rct2.h"
 }
 
 static void WriteConvertFromAndToMessage(uint32 sourceFileType, uint32 destinationFileType);

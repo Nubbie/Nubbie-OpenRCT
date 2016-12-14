@@ -25,11 +25,14 @@
 #include "../ride/track_design.h"
 #include "../ride/vehicle.h"
 #include "../scenario.h"
+#include "../ScenarioRepository.h"
 #include "../world/park.h"
 #include "colour.h"
 
 struct rct_window;
 union rct_window_event;
+struct track_design_file_ref;
+
 extern uint16 TextInputDescriptionArgs[4];
 extern char gTextBoxInput[512];
 extern int gMaxTextBoxInputLength;
@@ -86,9 +89,9 @@ typedef struct rct_viewport {
 	sint16 view_y;					// 0x0A
 	sint16 view_width;				// 0x0C
 	sint16 view_height;				// 0x0E
+	uint32 flags;					// 0x12
 	uint8 zoom;						// 0x10
 	uint8 var_11;
-	uint32 flags;					// 0x12
 	uint8 visibility;				// VISIBILITY_CACHE
 } rct_viewport;
 
@@ -282,7 +285,7 @@ typedef struct rct_window {
 		uint16 ride_colour;
 		rct_research_item* research_item;
 		rct_object_entry* object_entry;
-		scenario_index_entry* highlighted_scenario;
+		const scenario_index_entry* highlighted_scenario;
 		struct {
 			uint16 var_494;
 			uint16 var_496;
@@ -676,7 +679,7 @@ void ride_construction_tooldown_construct(int screenX, int screenY);
 void custom_currency_window_open();
 
 void window_maze_construction_update_pressed_widgets();
-void window_track_place_open(const track_design_file_ref *tdFileRef);
+void window_track_place_open(const struct track_design_file_ref *tdFileRef);
 rct_window *window_new_ride_open();
 rct_window *window_new_ride_open_research();
 void window_install_track_open(const char* path);
@@ -700,12 +703,13 @@ void window_research_funding_page_paint(rct_window *w, rct_drawpixelinfo *dpi, i
 void window_scenery_open();
 void window_music_credits_open();
 void window_publisher_credits_open();
-void window_track_manage_open(track_design_file_ref *tdFileRef);
+void window_track_manage_open(struct track_design_file_ref *tdFileRef);
 void window_viewport_open();
 void window_themes_open();
 void window_title_editor_open(int tab);
 void window_title_command_editor_open(int command, bool insert);
 void window_tile_inspector_open();
+void window_tile_inspector_clear_clipboard();
 void window_text_input_open(rct_window* call_w, int call_widget, rct_string_id title, rct_string_id description, rct_string_id existing_text, uintptr_t existing_args, int maxLength);
 void window_text_input_raw_open(rct_window* call_w, int call_widget, rct_string_id title, rct_string_id description, utf8string existing_text, int maxLength);
 rct_window *window_mapgen_open();
@@ -732,6 +736,9 @@ void window_new_ride_focus(ride_list_item rideItem);
 void window_map_tooltip_update_visibility();
 
 void window_staff_list_init_vars();
+
+void game_command_callback_pickup_guest(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp);
+void game_command_callback_pickup_staff(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp);
 
 void window_event_close_call(rct_window* w);
 void window_event_mouse_up_call(rct_window* w, int widgetIndex);

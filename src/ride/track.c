@@ -908,7 +908,7 @@ static bool track_remove_station_element(int x, int y, int z, int direction, int
 			finaliseStationDone = false;
 		}
 	} while (!finaliseStationDone);
-	
+
 	return true;
 }
 
@@ -946,9 +946,7 @@ static money32 track_place(int rideIndex, int type, int originX, int originY, in
 		gGameCommandErrorText = STR_NOT_ALLOWED_TO_MODIFY_STATION;
 		return MONEY32_UNDEFINED;
 	}
-	if (!sub_68B044()) {
-		return MONEY32_UNDEFINED;
-	}
+
 	if (!(flags & GAME_COMMAND_FLAG_ALLOW_DURING_PAUSED)) {
 		if (game_is_paused() && !gCheatsBuildInPauseMode) {
 			gGameCommandErrorText = STR_CONSTRUCTION_NOT_POSSIBLE_WHILE_GAME_IS_PAUSED;
@@ -983,7 +981,7 @@ static money32 track_place(int rideIndex, int type, int originX, int originY, in
 
 	money32 cost = 0;
 	const rct_preview_track *trackBlock = get_track_def_from_ride(ride, type);
-
+	uint32 num_elements = 0;
 	// First check if any of the track pieces are outside the park
 	for (; trackBlock->index != 0xFF; trackBlock++) {
 		int x, y, z, offsetX, offsetY;
@@ -1015,8 +1013,12 @@ static money32 track_place(int rideIndex, int type, int originX, int originY, in
 			gGameCommandErrorText = STR_LAND_NOT_OWNED_BY_PARK;
 			return MONEY32_UNDEFINED;
 		}
+		num_elements++;
 	}
 
+	if (!map_check_free_elements_and_reorganise(num_elements)) {
+		return MONEY32_UNDEFINED;
+	}
 	const uint16 *trackFlags = (rideTypeFlags & RIDE_TYPE_FLAG_FLAT_RIDE) ?
 		FlatTrackFlags :
 		TrackFlags;
@@ -1175,7 +1177,7 @@ static money32 track_place(int rideIndex, int type, int originX, int originY, in
 			return MONEY32_UNDEFINED;
 		}
 
-		if ((rideTypeFlags & RIDE_TYPE_FLAG_6) && !(byte_9D8150 & 1)) {
+		if ((rideTypeFlags & RIDE_TYPE_FLAG_6) && !byte_9D8150) {
 			mapElement = map_get_surface_element_at(x / 32, y / 32);
 
 			uint8 water_height = 2 * (mapElement->properties.surface.terrain & MAP_ELEMENT_WATER_HEIGHT_MASK);
@@ -1238,7 +1240,7 @@ static money32 track_place(int rideIndex, int type, int originX, int originY, in
 					maxHeight = RideData5[ride->type].max_height;
 				}
 				ride_height /= 2;
-				if (ride_height > maxHeight && !(byte_9D8150 & 1)) {
+				if (ride_height > maxHeight && !byte_9D8150) {
 					gGameCommandErrorText = STR_TOO_HIGH_FOR_SUPPORTS;
 					return MONEY32_UNDEFINED;
 				}
@@ -1757,7 +1759,7 @@ static money32 set_maze_track(uint16 x, uint8 flags, uint8 direction, uint16 y, 
 
 	money32 cost = 0;
 
-	if (!sub_68B044()) {
+	if (!map_check_free_elements_and_reorganise(1)) {
 		return MONEY32_UNDEFINED;
 	}
 
@@ -2120,7 +2122,7 @@ void track_get_front(rct_xy_element *input, rct_xy_element *output)
 
 bool track_element_is_lift_hill(rct_map_element *trackElement)
 {
-	return trackElement->type & 0x80;
+	return trackElement->type & TRACK_ELEMENT_FLAG_CHAIN_LIFT;
 }
 
 /**
@@ -2157,6 +2159,11 @@ void track_element_set_cable_lift(rct_map_element *trackElement) {
 
 void track_element_clear_cable_lift(rct_map_element *trackElement) {
 	trackElement->properties.track.colour &= ~TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT;
+}
+
+bool track_element_is_inverted(rct_map_element *trackElement)
+{
+	return trackElement->properties.track.colour & TRACK_ELEMENT_COLOUR_FLAG_INVERTED;
 }
 
 int track_get_actual_bank(rct_map_element *mapElement, int bank)

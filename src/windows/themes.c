@@ -495,7 +495,7 @@ static void window_themes_mousedown(int widgetIndex, rct_window* w, rct_widget* 
 			gDropdownItemsFormat[i] = STR_OPTIONS_DROPDOWN_ITEM;
 			gDropdownItemsArgs[i] = (uintptr_t)theme_manager_get_available_theme_name(i);
 		}
-		
+
 		window_dropdown_show_text_custom_width(
 			w->x + widget->left,
 			w->y + widget->top,
@@ -800,7 +800,7 @@ void window_themes_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int scroll
 
 	if ((w->colours[1] & 0x80) == 0)
 		//gfx_fill_rect(dpi, dpi->x, dpi->y, dpi->x + dpi->width - 1, dpi->y + dpi->height - 1, ColourMapA[w->colours[1]].mid_light);
-		gfx_clear(dpi, ColourMapA[w->colours[1]].mid_light * 0x1010101);
+		gfx_clear(dpi, ColourMapA[w->colours[1]].mid_light);
 	y = 0;
 	for (int i = 0; i < get_colour_scheme_tab_count(); i++) {
 		if (y > dpi->y + dpi->height) {
@@ -810,11 +810,10 @@ void window_themes_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int scroll
 			if (i + 1 < get_colour_scheme_tab_count()) {
 				int colour = w->colours[1];
 				if (colour & COLOUR_FLAG_TRANSLUCENT) {
-					colour = _9DEDF4[colour];
+					translucent_window_palette windowPalette = TranslucentWindowPalettes[BASE_COLOUR(colour)];
 
-					colour = colour | 0x2000000;
-					gfx_fill_rect(dpi, 0, y + _row_height - 2, window_themes_widgets[WIDX_THEMES_LIST].right, y + _row_height - 2, colour + 1);
-					gfx_fill_rect(dpi, 0, y + _row_height - 1, window_themes_widgets[WIDX_THEMES_LIST].right, y + _row_height - 1, colour + 2);
+					gfx_filter_rect(dpi, 0, y + _row_height - 2, window_themes_widgets[WIDX_THEMES_LIST].right, y + _row_height - 2, windowPalette.highlight);
+					gfx_filter_rect(dpi, 0, y + _row_height - 1, window_themes_widgets[WIDX_THEMES_LIST].right, y + _row_height - 1, windowPalette.shadow);
 				}
 				else {
 					colour = ColourMapA[w->colours[1]].mid_dark;
@@ -836,9 +835,9 @@ void window_themes_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int scroll
 				}
 				gfx_draw_sprite(dpi, image, _button_offset_x + 12 * j, y + _button_offset_y, 0);
 
-				gfx_fill_rect_inset(dpi, _button_offset_x + 12 * j, y + _check_offset_y, _button_offset_x + 12 * j + 9, y + _check_offset_y + 10, w->colours[1], 0xE0);
+				gfx_fill_rect_inset(dpi, _button_offset_x + 12 * j, y + _check_offset_y, _button_offset_x + 12 * j + 9, y + _check_offset_y + 10, w->colours[1], INSET_RECT_F_E0);
 				if (colour & COLOUR_FLAG_TRANSLUCENT) {
-					gCurrentFontSpriteBase = -1;
+					gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM_DARK;
 					gfx_draw_string(dpi, (char*)CheckBoxMarkString, w->colours[1] & 0x7F, _button_offset_x + 12 * j, y + _check_offset_y);
 				}
 

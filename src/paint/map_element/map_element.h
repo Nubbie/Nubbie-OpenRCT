@@ -54,6 +54,9 @@ enum
 	TUNNEL_0 = 0,
 	TUNNEL_1 = 1,
 	TUNNEL_2 = 2,
+	TUNNEL_3 = 3,
+	TUNNEL_4 = 4,
+	TUNNEL_5 = 5,
 	TUNNEL_6 = 6,
 	TUNNEL_7 = 7,
 	TUNNEL_8 = 8,
@@ -61,7 +64,9 @@ enum
 	TUNNEL_10 = 0x0A,
 	TUNNEL_11 = 0x0B,
 	TUNNEL_12 = 0x0C,
-	TUNNEL_14 = 0x0E
+	TUNNEL_13 = 0x0D,
+	TUNNEL_14 = 0x0E,
+	TUNNEL_15 = 0x0F,
 };
 
 typedef struct tunnel_entry {
@@ -75,15 +80,17 @@ enum
 	G141E9DB_FLAG_2 = 2,
 };
 
+#define TUNNEL_MAX_COUNT 65
+
 #ifdef NO_RCT2
 extern uint8 g141E9DB;
 extern uint16 gUnk141E9DC;
 extern rct_xy16 gPaintMapPosition;
 extern bool gDidPassSurface;
 extern rct_map_element * gSurfaceElement;
-extern tunnel_entry gLeftTunnels[65];
+extern tunnel_entry gLeftTunnels[TUNNEL_MAX_COUNT];
 extern uint8 gLeftTunnelCount;
-extern tunnel_entry gRightTunnels[65];
+extern tunnel_entry gRightTunnels[TUNNEL_MAX_COUNT];
 extern uint8 gRightTunnelCount;
 extern uint8 gVerticalTunnelHeight;
 #else

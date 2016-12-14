@@ -33,6 +33,8 @@
 #include "peep/staff.h"
 #include "ride/ride.h"
 #include "scenario.h"
+#include "ScenarioRepository.h"
+#include "ScenarioSources.h"
 #include "util/util.h"
 #include "world/climate.h"
 #include "world/map.h"
@@ -218,6 +220,7 @@ static int title_load_park(const char *path)
 	news_item_init_queue();
 	load_palette();
 	gfx_invalidate_screen();
+	window_tile_inspector_clear_clipboard();
 	gScreenAge = 0;
 	gGameSpeed = 1;
 	return 1;
@@ -366,7 +369,6 @@ static void title_do_next_script_opcode()
 	case TITLE_SCRIPT_LOAD:
 		{
 			char *ch, filename[32], path[MAX_PATH];
-			char separator = platform_get_path_separator();
 
 			// Get filename
 			ch = filename;
@@ -379,12 +381,11 @@ static void title_do_next_script_opcode()
 				safe_strcpy(path, gConfigTitleSequences.presets[_scriptCurrentPreset].path, MAX_PATH);
 			}
 			else {
-				platform_get_user_directory(path, "title sequences");
-				strcat(path, gConfigTitleSequences.presets[_scriptCurrentPreset].name);
-				strncat(path, &separator, 1);
+				platform_get_user_directory(path, "title sequences", sizeof(path));
+				safe_strcat_path(path, gConfigTitleSequences.presets[_scriptCurrentPreset].name, sizeof(path));
 			}
 
-			strcat(path, filename);
+			safe_strcat_path(path, filename, sizeof(path));
 			if (title_load_park(path)) {
 				_scriptNoLoadsSinceRestart = 0;
 				gTitleScriptSave = gConfigTitleSequences.presets[gCurrentPreviewTitleSequence].commands[gTitleScriptCommand].saveIndex;
@@ -425,9 +426,11 @@ static void title_do_next_script_opcode()
 		}
 
 		const utf8 *path = NULL;
-		for (int i = 0; i < gScenarioListCount; i++) {
-			if (gScenarioList[i].source_index == sourceDesc.index) {
-				path = gScenarioList[i].path;
+		size_t numScenarios = scenario_repository_get_count();
+		for (size_t i = 0; i < numScenarios; i++) {
+			const scenario_index_entry * scenario = scenario_repository_get_by_index(i);
+			if (scenario->source_index == sourceDesc.index) {
+				path = scenario->path;
 				break;
 			}
 		}
@@ -501,11 +504,11 @@ void DrawOpenRCT2(rct_drawpixelinfo *dpi, int x, int y)
 
 	// Write name and version information
 	openrct2_write_full_version_info(ch, sizeof(buffer) - (ch - buffer));
-	gfx_draw_string(dpi, buffer, 0, x + 5, y + 5 - 13);
+	gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5 - 13);
 
 	// Write platform information
-	sprintf(ch, "%s (%s)", OPENRCT2_PLATFORM, OPENRCT2_ARCHITECTURE);
-	gfx_draw_string(dpi, buffer, 0, x + 5, y + 5);
+	snprintf(ch, 256 - (ch - buffer), "%s (%s)", OPENRCT2_PLATFORM, OPENRCT2_ARCHITECTURE);
+	gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5);
 }
 
 
@@ -624,11 +627,10 @@ static uint8 *title_script_load()
 	char parts[3 * 128], *token, *part1, *part2, *src;
 
 	utf8 path[MAX_PATH];
-	utf8 dataPath[MAX_PATH];
-	utf8 filePath[] = "title/script.txt";
 
-	platform_get_openrct_data_path(dataPath);
-	sprintf(path, "%s%c%s", dataPath, platform_get_path_separator(), filePath);
+	platform_get_openrct_data_path(path, sizeof(path));
+	safe_strcat_path(path, "title", MAX_PATH);
+	safe_strcat_path(path, "script.txt", MAX_PATH);
 	log_verbose("loading title script, %s", path);
 	file = SDL_RWFromFile(path, "r");
 	if (file == NULL) {

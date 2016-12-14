@@ -54,7 +54,9 @@ enum {
 	COLOUR_BRIGHT_RED,
 	COLOUR_DARK_PINK,
 	COLOUR_BRIGHT_PINK,
-	COLOUR_LIGHT_PINK
+	COLOUR_LIGHT_PINK,
+
+	COLOUR_COUNT
 };
 
 /**
@@ -65,15 +67,22 @@ enum {
 	COLOUR_LIGHT_WATER = 10
 };
 
+#define TEXT_COLOUR_254			(254)
+#define TEXT_COLOUR_255			(255)
+
 #define COLOUR_FLAG_OUTLINE		(1 << 5)
-#define COLOUR_FLAG_INSET 		(1 << 6)
+#define COLOUR_FLAG_INSET 		(1 << 6) // 64, 0x40
 #define COLOUR_FLAG_TRANSLUCENT (1 << 7)
+#define COLOUR_FLAG_8 			(1 << 8)
 #define TRANSLUCENT(x) ((x) | COLOUR_FLAG_TRANSLUCENT)
 #define NOT_TRANSLUCENT(x) ((x) & ~COLOUR_FLAG_TRANSLUCENT)
+#define BASE_COLOUR(x) 			((x) & 0x1F)
 
 #define NUM_COLOURS 32
 
-typedef struct rct_colour_map_a {
+typedef struct rct_colour_map {
+	uint8 colour_0;
+	uint8 colour_1;
 	uint8 darkest;
 	uint8 darker;
 	uint8 dark;
@@ -82,21 +91,11 @@ typedef struct rct_colour_map_a {
 	uint8 light;
 	uint8 lighter;
 	uint8 lightest;
-} rct_colour_map_a;
+	uint8 colour_10;
+	uint8 colour_11;
+} rct_colour_map;
 
-typedef struct rct_colour_map_b {
-	uint8 a;
-	uint8 b;
-	uint8 c;
-	uint8 d;
-	uint8 e;
-	uint8 f;
-	uint8 g;
-	uint8 h;
-} rct_colour_map_b;
-
-extern rct_colour_map_a ColourMapA[32];
-extern rct_colour_map_b ColourMapB[32];
+extern rct_colour_map ColourMapA[COLOUR_COUNT];
 
 void colours_init_maps();
 

@@ -14,15 +14,16 @@
  *****************************************************************************/
 #pragma endregion
 
+#include "../game.h"
 #include "../input.h"
+#include "../interface/themes.h"
+#include "../interface/viewport.h"
 #include "../interface/widget.h"
 #include "../interface/window.h"
-#include "../interface/viewport.h"
 #include "../localisation/localisation.h"
+#include "../rct2.h"
 #include "../sprites.h"
 #include "../world/map.h"
-#include "../game.h"
-#include "../interface/themes.h"
 
 #define MINIMUM_TOOL_SIZE 1
 #define MAXIMUM_TOOL_SIZE 64
@@ -208,6 +209,23 @@ static void window_land_rights_invalidate(rct_window *w)
 	window_land_rights_widgets[WIDX_PREVIEW].image = gLandToolSize <= 7 ?
 		SPR_LAND_TOOL_SIZE_0 + gLandToolSize :
 		0xFFFFFFFF;
+
+	// Disable ownership and/or construction buying functions if there're no tiles left for sale
+	if (gLandRemainingOwnershipSales == 0) {
+		w->disabled_widgets |= (1 << WIDX_BUY_LAND_RIGHTS);
+		window_land_rights_widgets[WIDX_BUY_LAND_RIGHTS].tooltip = STR_NO_LAND_RIGHTS_FOR_SALE_TIP;
+	} else {
+		w->disabled_widgets &= ~(1 << WIDX_BUY_LAND_RIGHTS);
+		window_land_rights_widgets[WIDX_BUY_LAND_RIGHTS].tooltip = STR_BUY_LAND_RIGHTS_TIP;
+	}
+
+	if (gLandRemainingConstructionSales == 0) {
+		w->disabled_widgets |= (1 << WIDX_BUY_CONSTRUCTION_RIGHTS);
+		window_land_rights_widgets[WIDX_BUY_CONSTRUCTION_RIGHTS].tooltip = STR_NO_CONSTRUCTION_RIGHTS_FOR_SALE_TIP;
+	} else {
+		w->disabled_widgets &= ~(1 << WIDX_BUY_CONSTRUCTION_RIGHTS);
+		window_land_rights_widgets[WIDX_BUY_CONSTRUCTION_RIGHTS].tooltip = STR_BUY_CONSTRUCTION_RIGHTS_TIP;
+	}
 }
 
 static void window_land_rights_paint(rct_window *w, rct_drawpixelinfo *dpi)
@@ -220,7 +238,7 @@ static void window_land_rights_paint(rct_window *w, rct_drawpixelinfo *dpi)
 	window_draw_widgets(w, dpi);
 	// Draw number for tool sizes bigger than 7
 	if (gLandToolSize > 7) {
-		gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, 0, &gLandToolSize);
+		gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, COLOUR_BLACK, &gLandToolSize);
 	}
 	y = w->y + window_land_rights_widgets[WIDX_PREVIEW].bottom + 5;
 
@@ -230,7 +248,7 @@ static void window_land_rights_paint(rct_window *w, rct_drawpixelinfo *dpi)
 	if (gLandRightsCost != MONEY32_UNDEFINED &&
 		gLandRightsCost != 0
 	) {
-		gfx_draw_string_centred(dpi, STR_COST_AMOUNT, x, y, 0, &gLandRightsCost);
+		gfx_draw_string_centred(dpi, STR_COST_AMOUNT, x, y, COLOUR_BLACK, &gLandRightsCost);
 	}
 }
 

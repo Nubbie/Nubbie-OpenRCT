@@ -85,6 +85,9 @@ bool rideTypeShouldLoseSeparateFlag(const rct_ride_entry *rideEntry)
 
 	bool remove_flag = true;
 	for (int j = 0; j < 3; j++) {
+		if (rideEntry->ride_type[j] == RIDE_TYPE_NULL) {
+			continue;
+		}
 		if (ride_type_has_flag(rideEntry->ride_type[j], RIDE_TYPE_FLAG_FLAT_RIDE)) {
 			remove_flag = false;
 		}

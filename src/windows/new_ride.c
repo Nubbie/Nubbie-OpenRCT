@@ -27,12 +27,14 @@
 #include "../object.h"
 #include "../rct1.h"
 #include "../ride/ride.h"
-#include "../ride/track.h"
-#include "../ride/track_design.h"
-#include "../world/scenery.h"
 #include "../ride/ride_data.h"
-#include "../sprites.h"
+#include "../ride/track.h"
 #include "../ride/track_data.h"
+#include "../ride/track_design.h"
+#include "../ride/TrackDesignRepository.h"
+#include "../sprites.h"
+#include "../util/util.h"
+#include "../world/scenery.h"
 
 static uint8 _windowNewRideCurrentTab;
 static ride_list_item _windowNewRideHighlightedItem[6];
@@ -311,7 +313,7 @@ static void window_new_ride_populate_list()
 		}
 
 		char preferredVehicleName[9];
-		strcpy(preferredVehicleName,"        ");
+		safe_strcpy(preferredVehicleName, "        ", sizeof(preferredVehicleName));
 
 		if (ride_type_is_invented(rideType)) {
 			int dh = 0;
@@ -338,11 +340,11 @@ static void window_new_ride_populate_list()
 				// Skip if the vehicle isn't the preferred vehicle for this generic track type
 				if (gConfigInterface.select_by_track_type && (!(rideEntry->flags & RIDE_ENTRY_FLAG_SEPARATE_RIDE) || rideTypeShouldLoseSeparateFlag(rideEntry))) {
 					if (strcmp(preferredVehicleName, "        \0") == 0) {
-						strcpy(preferredVehicleName, rideEntryName);
+						safe_strcpy(preferredVehicleName, rideEntryName, sizeof(preferredVehicleName));
 						preferredVehicleName[8] = 0;
 					} else {
 						if (vehicle_preference_compare(rideType, preferredVehicleName, rideEntryName) == 1) {
-							strcpy(preferredVehicleName, rideEntryName);
+							safe_strcpy(preferredVehicleName, rideEntryName, sizeof(preferredVehicleName));
 							preferredVehicleName[8] = 0;
 						} else {
 							continue;
@@ -778,7 +780,7 @@ static void window_new_ride_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, i
 	if (_windowNewRideCurrentTab == WINDOW_NEW_RIDE_PAGE_RESEARCH)
 		return;
 
-	gfx_clear(dpi, ColourMapA[w->colours[1]].mid_light * 0x1010101);
+	gfx_clear(dpi, ColourMapA[w->colours[1]].mid_light);
 
 	int x = 1;
 	int y = 1;
@@ -788,9 +790,9 @@ static void window_new_ride_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, i
 		// Draw flat button rectangle
 		int flags = 0;
 		if (w->new_ride.selected_ride_id == *((sint16*)listItem))
-			flags |= 0x20;
+			flags |= INSET_RECT_FLAG_BORDER_INSET;
 		if (w->new_ride.highlighted_ride_id == *((sint16*)listItem) || flags != 0)
-			gfx_fill_rect_inset(dpi, x, y, x + 115, y + 115, w->colours[1], 0x80 | flags);
+			gfx_fill_rect_inset(dpi, x, y, x + 115, y + 115, w->colours[1], INSET_RECT_FLAG_FILL_MID_LIGHT | flags);
 
 		// Draw ride image with feathered border
 		rideEntry = get_ride_entry(listItem->entry_index);
@@ -856,7 +858,7 @@ static int get_num_track_designs(ride_list_item item)
 		}
 	}
 
-	return (int)track_design_index_get_count_for_ride(item.type, entryPtr);
+	return (int)track_repository_get_count_for_ride(item.type, entryPtr);
 }
 
 /**
@@ -877,7 +879,7 @@ static void window_new_ride_paint_ride_information(rct_window *w, rct_drawpixeli
 
 	set_format_arg(0, rct_string_id, rideName);
 	set_format_arg(2, rct_string_id, rideDescription);
-	gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, width, STR_NEW_RIDE_NAME_AND_DESCRIPTION, 0);
+	gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, width, STR_NEW_RIDE_NAME_AND_DESCRIPTION, COLOUR_BLACK);
 
 	// Number of designs available
 	if (ride_type_has_flag(item.type, RIDE_TYPE_FLAG_HAS_TRACK)) {
@@ -902,7 +904,7 @@ static void window_new_ride_paint_ride_information(rct_window *w, rct_drawpixeli
 			stringId = STR_X_DESIGNS_AVAILABLE;
 			break;
 		}
-		gfx_draw_string_left(dpi, stringId, &_lastTrackDesignCount, 0, x, y + 39);
+		gfx_draw_string_left(dpi, stringId, &_lastTrackDesignCount, COLOUR_BLACK, x, y + 39);
 	}
 
 	// Price
@@ -922,7 +924,7 @@ static void window_new_ride_paint_ride_information(rct_window *w, rct_drawpixeli
 		if (!ride_type_has_flag(item.type, RIDE_TYPE_FLAG_HAS_NO_TRACK))
 			stringId = STR_NEW_RIDE_COST_FROM;
 
-		gfx_draw_string_right(dpi, stringId, &price, 0, x + width, y + 39);
+		gfx_draw_string_right(dpi, stringId, &price, COLOUR_BLACK, x + width, y + 39);
 	}
 }
 

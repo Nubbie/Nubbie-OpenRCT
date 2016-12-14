@@ -38,9 +38,9 @@ uint16 gUnk141E9DC;
 rct_xy16 gPaintMapPosition;
 bool gDidPassSurface;
 rct_map_element * gSurfaceElement;
-tunnel_entry gLeftTunnels[65];
+tunnel_entry gLeftTunnels[TUNNEL_MAX_COUNT];
 uint8 gLeftTunnelCount;
-tunnel_entry gRightTunnels[65];
+tunnel_entry gRightTunnels[TUNNEL_MAX_COUNT];
 uint8 gRightTunnelCount;
 uint8 gVerticalTunnelHeight;
 #endif
@@ -104,7 +104,7 @@ static void blank_tiles_paint(int x, int y)
 {
 	rct_drawpixelinfo *dpi = unk_140E9A8;
 
-	int dx;
+	int dx = 0;
 	switch (get_current_rotation()) {
 	case 0:
 		dx = x + y;

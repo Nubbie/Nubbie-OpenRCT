@@ -521,7 +521,7 @@ static void window_top_toolbar_dropdown(rct_window *w, int widgetIndex, int drop
 		// New game is only available in the normal game. Skip one position to avoid incorrect mappings in the menus of the other modes.
 		if (gScreenFlags & (SCREEN_FLAGS_SCENARIO_EDITOR))
 			dropdownIndex += 1;
-		
+
 		// Quicksave is only available in the normal game. Skip one position to avoid incorrect mappings in the menus of the other modes.
 		if (gScreenFlags & (SCREEN_FLAGS_SCENARIO_EDITOR) && dropdownIndex > DDIDX_LOAD_GAME)
 			dropdownIndex += 1;
@@ -583,13 +583,13 @@ static void window_top_toolbar_dropdown(rct_window *w, int widgetIndex, int drop
 			window_cheats_open();
 			break;
 		case DDIDX_ENABLE_SANDBOX_MODE:
-			game_do_command(0, GAME_COMMAND_FLAG_APPLY, CHEAT_SANDBOXMODE, 0, GAME_COMMAND_CHEAT, 0, 0);
+			game_do_command(0, GAME_COMMAND_FLAG_APPLY, CHEAT_SANDBOXMODE, !gCheatsSandboxMode, GAME_COMMAND_CHEAT, 0, 0);
 			break;
 		case DDIDX_DISABLE_CLEARANCE_CHECKS:
-			game_do_command(0, GAME_COMMAND_FLAG_APPLY, CHEAT_DISABLECLEARANCECHECKS, 0, GAME_COMMAND_CHEAT, 0, 0);
+			game_do_command(0, GAME_COMMAND_FLAG_APPLY, CHEAT_DISABLECLEARANCECHECKS, !gCheatsDisableClearanceChecks, GAME_COMMAND_CHEAT, 0, 0);
 			break;
 		case DDIDX_DISABLE_SUPPORT_LIMITS:
-			game_do_command(0, GAME_COMMAND_FLAG_APPLY, CHEAT_DISABLESUPPORTLIMITS, 0, GAME_COMMAND_CHEAT, 0, 0);
+			game_do_command(0, GAME_COMMAND_FLAG_APPLY, CHEAT_DISABLESUPPORTLIMITS, !gCheatsDisableSupportLimits, GAME_COMMAND_CHEAT, 0, 0);
 			break;
 		}
 		break;
@@ -2294,15 +2294,23 @@ static void top_toolbar_tool_update_scenery(sint16 x, sint16 y){
 	switch (scenery_type){
 	case 0:
 		gMapSelectFlags |= MAP_SELECT_FLAG_ENABLE;
-		gMapSelectPositionA.x = mapTile.x;
-		gMapSelectPositionA.y = mapTile.y;
-		gMapSelectPositionB.x = mapTile.x;
-		gMapSelectPositionB.y = mapTile.y;
+		if (gWindowSceneryClusterEnabled) {
+			gMapSelectPositionA.x = mapTile.x - (8 << 5);
+			gMapSelectPositionA.y = mapTile.y - (8 << 5);
+			gMapSelectPositionB.x = mapTile.x + (7 << 5);
+			gMapSelectPositionB.y = mapTile.y + (7 << 5);
+		}
+		else {
+			gMapSelectPositionA.x = mapTile.x;
+			gMapSelectPositionA.y = mapTile.y;
+			gMapSelectPositionB.x = mapTile.x;
+			gMapSelectPositionB.y = mapTile.y;
+		}
 
 		scenery = get_small_scenery_entry(selected_scenery);
 
 		gMapSelectType = MAP_SELECT_TYPE_FULL;
-		if (!(scenery->small_scenery.flags & SMALL_SCENERY_FLAG_FULL_TILE)){
+		if (!(scenery->small_scenery.flags & SMALL_SCENERY_FLAG_FULL_TILE) && !gWindowSceneryClusterEnabled){
 			gMapSelectType = MAP_SELECT_TYPE_QUARTER_0 + ((parameter2 & 0xFF) ^ 2);
 		}
 

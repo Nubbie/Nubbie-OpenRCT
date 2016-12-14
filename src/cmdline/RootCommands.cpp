@@ -16,6 +16,8 @@
 
 #include <time.h>
 
+#include "../core/Guard.hpp"
+
 extern "C"
 {
     #include "../config.h"
@@ -30,10 +32,26 @@ extern "C"
 #include "../network/network.h"
 #include "CommandLine.hpp"
 
+#ifdef USE_BREAKPAD
+#define IMPLIES_SILENT_BREAKPAD ", implies --silent-breakpad"
+#else
+#define IMPLIES_SILENT_BREAKPAD
+#endif // USE_BREAKPAD
+
+#if defined(__WINDOWS__) && !defined(DEBUG)
+    #define __PROVIDE_CONSOLE__ 1
+#endif // defined(__WINDOWS__) && !defined(DEBUG)
+
 #ifndef DISABLE_NETWORK
 int  gNetworkStart = NETWORK_MODE_NONE;
 char gNetworkStartHost[128];
 int  gNetworkStartPort = NETWORK_DEFAULT_PORT;
+
+static uint32 _port            = 0;
+#endif
+
+#ifdef __PROVIDE_CONSOLE__
+    static bool _provideConsole;
 #endif
 
 static bool   _help            = false;
@@ -43,20 +61,11 @@ static bool   _all             = false;
 static bool   _about           = false;
 static bool   _verbose         = false;
 static bool   _headless        = false;
-#ifndef DISABLE_NETWORK
-static uint32 _port            = 0;
-#endif
 static utf8 * _password        = nullptr;
 static utf8 * _userDataPath    = nullptr;
 static utf8 * _openrctDataPath = nullptr;
 static utf8 * _rct2DataPath    = nullptr;
 static bool   _silentBreakpad  = false;
-
-#ifdef USE_BREAKPAD
-#define IMPLIES_SILENT_BREAKPAD ", implies --silent-breakpad"
-#else
-#define IMPLIES_SILENT_BREAKPAD
-#endif // USE_BREAKPAD
 
 static const CommandLineOptionDefinition StandardOptions[]
 {
@@ -67,6 +76,9 @@ static const CommandLineOptionDefinition StandardOptions[]
     { CMDLINE_TYPE_SWITCH,  &_about,           NAC, "about",             "show information about " OPENRCT2_NAME                      },
     { CMDLINE_TYPE_SWITCH,  &_verbose,         NAC, "verbose",           "log verbose messages"                                       },
     { CMDLINE_TYPE_SWITCH,  &_headless,        NAC, "headless",          "run " OPENRCT2_NAME " headless" IMPLIES_SILENT_BREAKPAD     },
+#ifdef __PROVIDE_CONSOLE__
+    { CMDLINE_TYPE_SWITCH,  &_provideConsole,  NAC, "console",           "creates a new or attaches to an existing console window for standard output" },
+#endif
 #ifndef DISABLE_NETWORK
     { CMDLINE_TYPE_INTEGER, &_port,            NAC, "port",              "port to use for hosting or joining a server"                },
 #endif
@@ -144,6 +156,13 @@ exitcode_t CommandLine::HandleCommandDefault()
 {
     exitcode_t result = EXITCODE_CONTINUE;
 
+#ifdef __PROVIDE_CONSOLE__
+    if (_provideConsole)
+    {
+        platform_windows_open_console();
+    }
+#endif
+
     if (_about)
     {
         PrintAbout();
@@ -217,7 +236,7 @@ exitcode_t HandleNoCommand(CommandLineArgEnumerator * enumerator)
         gOpenRCT2StartupAction = STARTUP_ACTION_OPEN;
     }
 
-    return EXITCODE_CONTINUE; 
+    return EXITCODE_CONTINUE;
 }
 
 exitcode_t HandleCommandEdit(CommandLineArgEnumerator * enumerator)
@@ -344,7 +363,7 @@ static exitcode_t HandleCommandSetRCT2(CommandLineArgEnumerator * enumerator)
     // Check user path that will contain the config
     utf8 userPath[MAX_PATH];
     platform_resolve_user_data_path();
-    platform_get_user_directory(userPath, NULL);
+    platform_get_user_directory(userPath, NULL, sizeof(userPath));
     if (!platform_ensure_directory_exists(userPath)) {
         Console::Error::WriteLine("Unable to access or create directory '%s'.", userPath);
         return EXITCODE_FAIL;
