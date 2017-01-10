@@ -33,10 +33,13 @@
   <Import Project="..\..\openrct2.common.props" />
   <PropertyGroup>
     <OutDir>$(SolutionDir)bin\tests\</OutDir>
-    <IncludePath>$(GtestDir);$(GtestDir)\include;$(SolutionDir)src;$(IncludePath)</IncludePath>
+    <IncludePath>$(GtestDir);$(GtestDir)\include;$(SolutionDir)src\openrct2;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)bin;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>GTEST_LANG_CXX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>openrct2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
