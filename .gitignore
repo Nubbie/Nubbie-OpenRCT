@@ -296,3 +296,4 @@ data/g2.dat
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+src/ride/coaster/twister_roller_coaster.c
